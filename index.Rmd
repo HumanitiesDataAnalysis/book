@@ -1,0 +1,298 @@
+--- 
+title: "Humanities Data Analysis"
+author: "Ben Schmidt"
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+output: 
+  bookdown::gitbook:
+    df_print: paged
+  bookdown::pdf_document:
+    df_print: kable
+documentclass: book
+bibliography: [/Users/bschmidt/Dropbox/MyLibrary.bib]
+biblio-style: apalike
+link-citations: yes
+github-repo: HumanitiesDataAnalysis/text
+description: "Data Analysis using tidy principles for humanities students."
+---
+
+
+# Introduction
+
+This is the text for a course in humanities data analysis; it uses the modern R language
+to introduce the major challenges and features that exist for data analysis in the humanities.
+
+This is an text that teaches the practice and principles of data analysis as
+encountered in traditionally non-quantitative fields. It is especially targeted
+at graduates students in history and literature departments.
+
+I have developed it over the years as a resources for classes aimed at
+graduate students in the humanities who are new to programming, but
+interested in working with digitized sources of a variety of
+sorts--whether texts, maps, networks, and images. It deals especially
+heavily with textual data, which is widespread and (relatively)
+straightforward to work with. But it deals with principles,
+algorithms, and approaches that can be applied to a variety of
+sources.
+
+It is organized as a set of week-by-week themes that build up a core
+curriculum of key concepts in the manipulation and presentation of
+data. The concepts here are drawn from what is likely to be useful to
+people in the humanities. The first half is largely occupied with
+technologies of counting.
+
+The sort of data you'll work with here may seem, at first, excessively
+limited. There are basically only two data types that this text deals
+with.  First, that of a table with rows representing observations and
+columns reprenting values. (This is a form almost everyone has
+encountered in spreadsheets or databases). Second, the related but
+more abstract representations of observations as points in an
+arbitrary, multidimensional space. I don't talk about, in principle,
+how to visualize or analyze nested hierarchies, network relations, or
+sentence trees.
+
+If you work through this full book, I hope you'll see that such a
+constraint can ultimately be *generative*, not limiting. While we
+won't directly visualize XML documents, for example, we will consider
+how best to work with and manipulate them as tabular data with their
+tag hierarchies represented as columns. This may seem weird. But it
+also captures one of the most interesting things about data analysis;
+that the tools you might learn for analyzing the distribution of words
+in a document can be just as valuable and valid for analyzing the
+distribution of people in a city or photographic features in an
+archive. For any single analysis task, you can probably save time at
+first by loading it into some online tool or downloadable Java
+application; but you lose in that the ability to see the shared
+representational layers below. An absolutely fundamental skill for
+data manipulation is the ability to *recast* data into different
+forms; by doing visualization and statistical analysis on just two of
+them, you will see how to shape a variety of forms of information
+
+
+## Transformational thinking
+
+As I have written elsewhere, digital humanists do not need to understand
+algorithms; instead, they need to understand the underlying *transformations* that algorithms 
+execute.@schmidt_do_2017
+
+## Some references.
+
+There are, at this point, plenty of textbooks out that aim to offer some
+guidelines for humanities students dipping their toe into R. Among the
+ones I have used the most are those by Jockers, Tilton and Arnold, and
+the *Programming Historian*. I felt
+the need to create this one in my courses for a few reasons.
+
+1. It uses purely *modern* R, by which I mean the so-called tidyverse
+   family of packages (including, notably, the tidytext and tidygraph
+   packages). As I explain in the [second chapter], these packages
+   offer not just a set of tools that can accomplish arbitrary tasks,
+   but a unified philosophy and clear separation of the different
+   aspects of data analysis. R is at an interesting point where it
+   seems conceivable that it could eventually be two different
+   languages entirely; for *pedagogical* purposes, I find the
+   tidyverse packages to promote useful thinking about data, as well
+   as simply allowing you to get stuff done.
+2. As part of this, it keeps the number of functions, libraries, and
+   concepts as low as possible. There are many different ways, even
+   within the tidyverse, to do any given task; rather than forcing you
+   to go back and look them up, I try to limit the vocabulary as far
+   as possible and only judiciously introduce new concepts. This means
+   that some of the most interesting and often useful elements from
+   the tidyverse are ommitted (quosures and quasiquotation; XXX) as
+   well as some features of base R that most courses generally
+   introduce out of reflex (there is extremely little use in this text
+   of things like for and while-loops, the `$` accessor for data
+   frames, and the factor data type).
+3. It tries to, influenced by the tidyverse philosophy, step back from
+   describing simply how to do something the fastest towards instead
+   emphasizing the basic units of data analysis that can be shared
+   across sources. There are three different major languages used in
+   the digital humanities: Python, R, and Javascript. While each of
+   them offers different local syntaxes, they have the same core
+   principles of data manipulation. If a student wants to complete
+   this course in Python rather than R, doing so is entirely possible;
+   the proof that they've done so is in their ability to execute the
+   problems at the end of each chapter.
+4. It presents an opinionated reduction of the world of statistical
+   operations down to a few essentials. The statistics that humanists
+   use are quite different from those needed in the social science,
+   where causal inference is king; although I do go into some detail
+   about Dunning log-likelihood (known as g-tests outside of
+   computational linguistics) and the bootstrap (as a general purpose
+   tool), I aim to help you produce visualizations or tables as
+   endpoints more often than statistical tests.
+
+   On the other hand, it does go much farther into lessons from the
+   world of informational retrieval, like TF-IDF and cosine
+   similarity, than a typical programming text, since it is so
+   important for students in the humanities to understand the basics
+   of search engines even if they will *not* code again.
+
+   Finally, because I know that students in the humanities have
+   frequently not dealt directly with math since high school, I try to
+   be careful to dwell a bit on the purpose and nature of even
+   high-school concepts like logarithms.
+
+## Exercises
+
+Because this is fundamentally a pedagogical text, each chapter
+generally ends with a number of exercises.  The point of these is to
+allow students to work out some of the concepts introduced in the text
+in their own brains and fingers. (Or however they prefer to work). In
+my classes, these are generally ungraded assignments that students
+must hand in each week; I encourage collaborative work and don't
+penalize dead ends.
+
+It (for now) uses the R language as the primary area of application,
+but I may create a hybrid version of the text that uses the python
+`pandas` package (and `altair` for data visualization) that offer the
+same fundamental approach as does R.
+
+
+
+## Code
+
+This course will have you writing code in the R language. There
+is an extensive debate about whether digital humanists need to learn
+to code. If you have a lot of money to pay other people, you can
+probably get away without it. But the fact of the matter is
+simply that if you want to either *do* data analysis in the
+humanities, coding will often be the only way to realize your personal
+vision; and if you want to *build resources in the humanities* that
+*others* might want analyze, you'll need to know what sophisticated
+users want to do with your tools to make them work for them.
+
+I have no expectation that anyone will come out of this a full-fledged
+developer. By doing some actual scripting, you'll
+come to see that debates over learning to code brush create a false binary; 
+everyone is working 
+We'll be focusing in particular in developing
+skills less in full-fledged "programming," but in "scripting." That
+means instructing a computer in every stage of your work flow; using a
+language rather than a Graphical User Interface (GUI). This takes more time at
+first, but has some major advantages over working in a GUI:
+
+1. Your work is saved and open for inspection.
+2. If you want to discover an error, you can correct it without losing
+   the work done after.
+3. If you want to amend your process (analyze a hundred books instead
+   of ten, for instance) but do the same analysis, you can alter the
+   code only slightly.
+4. You can deploy a wide variety of methods on the same set of data. While
+   the initial overhead to coding is high, when you read about some fancy new method
+   you can often test it quickly *inside* R rather than having to figure out some different piece    of software.
+5. You can deploy the **same** methods on a wide variety of data. The tidy data abstraction 
+   we're working with gives a vocabulary for thinking about documents, resources, and anything
+   that can be counted; by creatively re-combining them, you can interpret new artifacts in
+   interesting ways.
+
+
+## Why R? 
+
+In this class, you will have to do some coding as well as just
+thinking about data analysis in the humanities. If you've never coded
+before, this will be frustrating from time to time. (In fact, if
+you've done a lot of coding before, it will *still* be frustrating!)
+
+We'll be working entirely in the "R" language, developed specifically
+for statistical computing. This has three main advantages for the sort
+of work that historians do:
+
+1. It is easy to download and install, though the program
+   `RStudio`. This makes it easy to do "scripting," rather than true
+   programming, where you can test your results step by step. It also
+   means that R takes the least time to get from raw data to pretty
+   plots of anything this side of Excel. RStudio also offers a number
+   of features that make it easier to explore data interactively.
+
+2. It has a set of packages we'll be using for data analysis. These
+   packages, whose names you will scattered through this text, are
+   `ggplot2`, `tidyr`, `dplyr`, and the like. These are not core R
+   libraries, but they are widely used and offer the most
+   intellectually coherent approach to data analysis and presentation
+   of any computing framework in existence. That means that even if
+   you don't use these particular tools in the future, working with
+   them should help you develop a more coherent way of thinking about
+   what data is from the computational side, and what you as a
+   humanist might be able to do with it. These tools are rooted in a
+   long line of software based on making it easy for individuals to
+   manipulate data: read the optional source on the history of
+   database populism to see more. The ways of thinking you get from
+   this will serve you will in thinking about relational databases,
+   structured data for archives, and a welter of other sources.
+
+3. It is free: both "free as in beer," and "free as in speech," in the
+   mantra of the Free Software Foundation. That means that it--like
+   the rest of the peripheral tools we'll talk about--won't suddenly
+   become inaccessible if you lose a university affiliation.
+
+### Which is the best language for humanities computing?
+
+Different computer languages serve different purposes. If you have taken ever taken
+an introductory computer science course, you might have learned a different language,
+like python, Java, C, or Lisp.
+
+Although computing languages are equivalent in a certain, abstract sense,
+they each channel you towards thinking in particular ways. As I say in chapter 2, 
+computers offer a variety of formal languages for describing things; each 
+of these languages emphasizes a different thing. 
+
+Which of these languages is best? It depends on what you want to
+do. For creating rich, user-oriented experiences, javascript and the open web
+is best. 
+
+What R--especially tidyverse R--does well is encourage you to move
+from thinking about *programming* to thinking about *data.*
+Exploratory data analysis which operates on a particular base class,
+the 'dataframe' or (for short) 'tibble.'  We'll talk about this more in Chapter 3; but
+a dataframe represents a structured collection of data much like an Excel spreadsheet
+or database table.
+This gives a coherent, basic framework for describing
+any data set. The things that you can do with a dataframe 
+
+If you only learn a single language, there's a strong argument that it should
+Python, which is a widespread language that can do anything and frequently
+run quite quickly. If you want to learn to create *code*, Python is a better language.
+
+
+
+But python generally promotes a specific kind of thinking
+about how you can get a problem done that revolves around thinking 
+like a computer.
+
+The closest analogues to these in other languages are less elegant and
+less well thought out. Python has widely used tool called `pandas` for
+analyzing data that is fast, powerful, and effective. But it is also
+more challenging for beginners than it need be. If you Google problems
+you'll be confronted with a variety of different ways to solve a problem.
+Ten years ago, one big advantage of python over R was that it had a small standard library, cleaner syntax, and
+promoted a single way to do things effectively. One of the great ironies of modern data science is that,
+for programming with data, the situation has almost completely reversed;
+pandas give you a bewildering number of different ways to join data frames,
+to access their rows or columns, or to walk through the rows. The `tidyverse`
+does a better job enforcing a particular approach.
+
+If you want to learn *programming*, there's a good argument for learning python.
+Although if you just want to get things done, there's an equally strong case for Javascript: and
+if you really want to understand computers, you should take a month learning to write in Haskell, or Lisp, or C.
+
+
+## The place of pre-packaged software.
+
+One thing you can't do in this course, though, is rely on the
+out-the-box where one tool fits every problem. ArcGIS or QGIS
+may be the best way to make maps, and Gephi the best way to do network
+analysis. But as this is a course in *data analysis,* you should
+think about the fundamental operations of cartography and network
+analysis as simply subsets of a broader field, which is hard to see
+from the confines. All of these things are possible in R, and by seeing
+them as facets of a broader activity, you'll develop transferrable skills 
+and insights.
+
+Also unlike graphical tools, working in a language *saves your workflow*. If you
+make a map with laboriously poisitioned points in ArcGIS, you may have a beautiful final project,
+but you can't reproduce exactly how it happened. In R, though, every step you
+take and every move you make can be preserved. This is called
+*reproducible research*, and it is among the most important
+contributions you can make when working collaboratively.

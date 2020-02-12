@@ -1,0 +1,449 @@
+---
+title: "Texts, Functions, and Probabilities"
+...
+
+# Texts as Data
+
+Research using texts is perhaps the most defining feature of digital humanities work.
+We're going to start by looking at one of the most canonical sets of texts out there: the State of the Union Addresses.
+State of the Union Addresses are a a useful baseline because they are openly available and free.
+
+We're also going to dig a little deeper into two important aspects of R we've ignored so far: **functions** (in the sense that you can write your own) and **probability**.
+
+## Reading Text into R
+
+You can read in a text the same way you would a table. But the most basic way is to take a step down the complexity ladder and read it in as a series of lines. This is, you should note, *not* 
+
+```{r read_single_SOTU, warnings=FALSE}
+library(tidyverse)
+text <- read_lines("../data/SOTUS/2019.txt")
+text %>% head()
+```
+
+If you type in "text," you'll see that we get the full 2015 State of the Union address.
+
+As structured here, the text is divided into *paragraphs.* For most of this class, we're going to be interested instead in working with *words*.
+
+## Tokenization
+
+Let's pause and note a perplexing fact: although you probably think that you know what a word is, that conviction should grow shaky the more 
+you think about it. "Field" and "fields" take up the same dictionary definition: is 
+
+In the field of corpus linguistics, the term is ignored in favor of the idea of a "token" or "type."
+
+Where a word is more abstract, a "type" is a concrete term used in actual language, and a "token" is the particular instance we're interested in.
+The type-token distinction is used across many fields. Philosophers like Charles Saunders Pierce, who originated the term @williams_tokens_1936, use it to distinguish
+between abstract things ('wizards') and individual instances of the thing ('Harry Potter.') Numismatologist (scholars of coins) use it to characterize the 
+hierarchy of coins: a single mint might produce many coins from the same mold, which is the 'type'; each individual instance is a token of that type. 
+
+Breaking a piece of text into words is thus called "tokenization." There are many ways to do it--coming up with creative tokenization methods will be helpful in the algorithms portion of this class. But the simplest is to simply to remove anything that isn't a letter. Using regular expression syntax, the R function `strsplit` lets us do just this: split a string into pieces. We could use the regular expression `[^A-Za-z]` to say "split on anything that isn't a letter between A and Z." Note, for example, that this makes the word "Don't" into two words.
+
+```{r tokenization}
+text %>%
+  str_split("[^A-Za-z]") %>%
+  head(5)
+```
+
+You'll notice that now each paragraph is broken off in a strange way: each paragraph shows up in a nested list.
+We're now looking at data structures other than a data.frame. This can be useful: but doesn't let us apply the rules of tidy analysis we've been working with. We've been working with `tibble` objects from the tidyverse. This individual word, though, can be turned into a column in a tibble by using `tibble` function to create it. 
+
+```{r headOfSOTU}
+SOTU <- tibble(text = text)
+SOTU %>% head(3)
+```
+
+Now we can use the "tidytext" package to start to analyze the document.
+
+The workhorse function in `tidytext` is `unnest_tokens`. It creates a new columns (here called 'words')
+from each of the individual ones in text. This is the same, conceptually, as the splitting above, 
+
+```{r}
+library(tidytext)
+
+tidied <- SOTU %>%
+  unnest_tokens(word, text)
+
+tidied %>% head(10)
+```
+
+You'll notice, immediately, that this looks a little different: each of the words is lowercased, and we've lost all punctuation.
+
+### The choices of tokenization
+
+There are, in fact, at least **7** different choices you can make in a typical tokenization process. (I'm borrowing an ontology fromo Matthew Denny and  Arthur Spirling, 2017.)
+
+1. Should words be  **lowercased**?
+2. Should **punctuation** be removed?
+3. Should **numbers** be replaced by some placeholder?
+4. Should words be **stemmed** (also called lemmatization).
+5. Should **bigrams**  or other multi-word phrase be used instead of or in addition to single word phrases?
+6. Should **stopwords** (the most common words) be removed?
+7. Should **rare words** be removed?
+
+Any of these can be combined: there at least a hundred common ways to tokenize even the simplest dataset. Here are
+a few examples of the difference that can make, with code that shows the appropriate settings:
+
+```{r}
+list(
+  SOTU %>% unnest_tokens(word, text) %>% select(lowercase = word),
+  SOTU %>% unnest_tokens(word, text) %>% rowwise() %>% mutate(word = SnowballC::wordStem(word)) %>% select(stemmed = word),
+  SOTU %>% unnest_tokens(word, text, to_lower = F) %>% select(uppercase = word),
+  SOTU %>% unnest_tokens(word, text, to_lower = F, strip_punc = FALSE) %>% select(punctuations = word),
+  SOTU %>% unnest_tokens(word, text, token = "ngrams", n = 2, to_lower = F) %>% select(bigrams = word)
+) %>% map(~ .x %>% head(10)) %>% bind_cols()
+```
+
+In any case, whatever definition of a word you use needs to have some use. So: What can we do with such a column put into a data.frame?
+
+
+### Wordcounts
+
+First off, you should be able to see that the old combination of `group_by`, `summarize`, and `n()` allow us to create a count of words in the document.
+
+This is perhaps the time to tell you that there is a shortcut in `dplyr` to do all of those at once: the **`count`** function. (A related function, **`add_count`**, 
+
+```{r}
+wordcounts <- tidied %>% group_by(word) %>% summarize(n = n()) %>% arrange(-n)
+wordcounts %>% head(5)
+```
+
+Using ggplot, we can plot the most frequent words.
+
+#### Word counts and Zipf's law.
+
+```{r}
+wordcounts <- wordcounts %>% mutate(rank = rank(-n)) %>% filter(n > 2, word != "")
+ggplot(wordcounts) + aes(x = rank, y = n, label = word) + geom_text()
+```
+
+This is an odd chart: all the data is clustered in the lower right-hand quadrant, so we can barely read any but the first ten words.
+
+As always, you should experiment with multiple scales,
+and especially think about logarithms.
+Putting logarithmic scales on both axes reveals something interesting about the way that data is structured; 
+this turns into a straight line.
+
+```{r}
+ggplot(wordcounts) +
+  aes(x = rank, y = n, label = word) +
+  geom_point(alpha = .3, color = "grey") +
+  geom_text(check_overlap = TRUE) +
+  scale_x_continuous(trans = "log") +
+  scale_y_continuous(trans = "log") +
+  labs(title = "Zipf's Law")
+```
+
+To put this formatlly, the logarithm of rank decreases linearily with the logarithm of count. 
+
+This is "Zipf's law:" the phenomenon means that the most common word is twice as common as the second most common word, three times as common as the third most common word, four times as common as the fourth most common word, and so forth. 
+
+It is named after the linguist George Zipf, who first found the phenomenon while laboriously counting occurrences of individual words in Joyce's *Ulysses* in 1935.
+
+This is a core textual phenomenon, and one you must constantly keep in mind: common words are very common indeed, and logarithmic scales are more often appropriate for plotting than linear ones. This pattern results from many dynamic systems where the "rich get richer," which characterizes all sorts of systems in the humanities. Consider, for one last time, our city population data.
+
+```{r}
+
+cities <- read_csv("../data/CESTACityData.csv")
+head(cities)
+nowadays <- cities %>% select(CityST, `2010`) %>% arrange(-`2010`) %>% mutate(rank = rank(-`2010`)) %>% filter(rank < 1000)
+
+ggplot(nowadays) + aes(x = rank, label = CityST, y = `2010`) +
+  geom_point(alpha = 1, color = "grey") +
+  geom_text(check_overlap = TRUE, adj = -.1) +
+  scale_x_continuous(trans = "log") +
+  scale_y_continuous(trans = "log")
+```
+
+It shows the same pattern. New York is about half again as large as LA, which is a third again as large Chicago, which is 25% as large as Houston... and so forth down the line.
+
+(Not every country shows this pattern; for instance, both Canada and Australia have two cities of comparable size at the top of their list. A pet theory of mine is that that is a result of the legacy of British colonialism; in some functional way, London may occupy the role of "largest city" in those two countries. The states of New Jersey and Connecticut, outside New York City, also lack a single dominant city.)
+
+### Concordances
+
+This data frame can also build what used to be the effort of entire scholarly careers: A "concordance." We do this by adding a second column to the frame which is not just the first word, but the second. `dplyr` includes a `lag` and `lead` function that let you combine the next element. You specify by how many positions you want a vector to "lag" or "lead" another one.
+
+```{r}
+tibble(number = c(1, 2, 3, 4, 5)) %>%
+  mutate(lag = lag(number, 1)) %>%
+  mutate(lead = lead(number, 1))
+```
+
+By using `lag` on a character vector, we can neatly align one series of text with the words that follow. By grouping on both words, we can use that to count bigrams:
+
+```{r}
+twoColumns <- tidied %>% mutate(word2 = lead(word, 1))
+
+twoColumns %>%
+  group_by(word, word2) %>%
+  summarize(count = n()) %>%
+  arrange(-count) %>%
+  head(10)
+```
+
+
+Doing this several times gives us snippets of the text we can read *across* as well as down.
+
+```{r}
+multiColumn <- tidied %>% mutate(word2 = lead(word, 1), word3 = lead(word, 2), word4 = lead(word, 3), word5 = lead(word, 4))
+
+
+multiColumn %>% count(word, word2, word3, word4, word5) %>% arrange(-n) %>% head(5)
+```
+
+Using `filter`, we can see the context for just one particular word. This is a **concordance**, which lets you look at any word in context.
+
+```{r}
+multiColumn %>% filter(word3 == "immigration")
+```
+
+## Functions
+
+That's just one State of the Union. How are we to read them all in?
+
+We could obviously type all the code in, one at a time. But that's bad pogramming!
+
+To work with this, we're going to finally introduce a core programming concepts: **functions.**
+
+We've used functions, continuously: but whenever you've written up a useful batch of code, you can bundle it into a function that you can then reuse.
+
+Here, for example, is a function that will read the state of the union address for any year.
+
+Note that we add one more thing to the end--a column that identifies the year.
+
+```{r}
+readSOTU <- function(filename) {
+  read_lines(filename) %>%
+    tibble(text = .) %>%
+    filter(text != "") %>%
+    ## Add a counter for the paragraph number
+    mutate(paragraph = 1:n()) %>%
+    unnest_tokens(word, text) %>%
+    mutate(filename = filename %>%
+      str_replace(".*/", "") %>%
+      str_replace(".txt", ""))
+}
+```
+
+We also need to know all the names of the files! R has functions for this built in natively--you can do all sorts of file manipulation programatically, from downloading to renaming
+and even deleting files from your hard drive.
+
+```{r}
+all_files <- list.files("../data/SOTUS/", full.names = T)
+```
+
+Now we have a list of State of the Unions and a function to read them in. How do we automate this procedure? There are several ways.
+
+The most traditional way, dating back to the programming languages of the 1950s, would be to write a `for` loop.
+This is OK to do, and maybe you'll see it at some point. But it's not the approach we take in this class.
+
+It's worth knowing how to recognize this kind of code if you haven't seen it before. But we aren't using it here. Good R programmers almost *never* write a `for-loop`; instead, they use functions that abstract up a level from working on a single item at a time 
+
+
+```{r, eval=FALSE}
+allSOTUs <- tibble()
+
+for (fname in all_files) {
+  allSOTUs <- rbind(allSOTUs, readSOTU(fname))
+}
+```
+
+One of the most basic ones is called "map": it takes as an argument a list and a function, and applies the function to each element of the list.
+Theword "map" can mean so many things that you could write an Abbot-and-Costello routine about it. It can mean cartography, it can mean a lookup dictionary, or
+it can mean a process of applying a function multiple times.
+
+The `tidyverse` comes with a variety of special functions for performing mapping in this last sense, including one for combining dataframes by rows called `map_dfr`.
+
+```{r}
+allSOTUs <- all_files %>%
+  map_dfr(readSOTU)
+
+allSOTUs %>%
+  group_by(filename) %>%
+  summarize(count = n()) %>%
+  ggplot() + geom_line() + aes(x = filename %>% as.numeric(), y = count) +
+  labs(title = "Number of words per State of the Union")
+```
+
+
+#### Metadata Joins
+
+The metadata here is edited from the [Programming Historian](http://programminghistorian.github.io/ph-submissions/lessons/published/basic-text-processing-in-r)
+
+
+```{r}
+metadata <- read_csv("../data/SOTUmetadata.csv")
+metadata
+```
+This metadata has a field called 'year'; we alreaday have a field called 'filename' that represents the same thing, **except** that the data type is wrong; it's a num
+```{r SOTUlengthChart, cache=TRUE}
+allSOTUs <- allSOTUs %>%
+  mutate(year = as.numeric(filename)) %>%
+  inner_join(metadata)
+
+allSOTUs %>%
+  ggplot() +
+  geom_bar(aes(x = year, fill = party)) +
+  labs("SOTU lengths by year and party")
+```
+
+There's an even more useful metadata field in here, though; whether the speech was written or delivered aloud.
+
+```{r}
+
+allSOTUs %>%
+  group_by(year, sotu_type) %>%
+  summarize(count = n()) %>%
+  ggplot() +
+  geom_point(aes(x = year, y = count, color = sotu_type))
+```
+
+One nice application is finding words that are unique to each individual author. We can do that to find words that only appeared in a single State of the Union. We'll put in a quick lowercase function so as not to worry about capitalization.
+
+```{r}
+
+allSOTUs %>%
+  mutate(year = as.numeric(filename)) %>%
+  group_by(word, president) %>%
+  summarize(count = n()) %>%
+  group_by(word) %>%
+  filter(n() == 1) %>%
+  arrange(-count)
+```
+
+
+Unique words are not the best way to make comparisons between texts: see the chapter on "advanced comparison" for a longer discussion.
+
+## Probabilities and Markov chains.
+
+Let's look at probabilities, which lets us apply our merging and functional skills in a fun way.
+
+```{r}
+bigrams <- allSOTUs %>% mutate(word2 = lead(word, 1), word3 = lead(word, 2))
+
+transitions <- bigrams %>%
+  group_by(word) %>%
+  ## First, we store the count for each word.
+  mutate(word1Count = n()) %>%
+  group_by(word, word2) %>%
+  ## Then we group by the second word to see what share of the first word is followed
+  ## by the second.
+  summarize(chance = n() / word1Count[1])
+```
+
+This gives a set of probabilities. What words follow "United?"
+
+```{r}
+transitions %>% filter(word == "united") %>% arrange(-chance)
+```
+
+We can use the `weight` argument to `sample_n`. If you run this several times, you'll see that you get different results.
+
+```{r}
+transitions %>% filter(word == "my") %>% sample_n(1, weight = chance)
+```
+
+So now, consider how we combine this with joins. If we merge along the word names,
+we have the probability for each word in the set.
+
+```{r Markov chains}
+seed <- c("my")
+
+frame <- data_frame(word = seed)
+
+frame %>%
+  inner_join(transitions) %>%
+  sample_n(1, weight = chance)
+```
+
+If we wanted to *extend* the original frame, we can rename the rows and
+use the `bind_rows` function to attach it to the end.
+
+```{r}
+frame %>%
+  inner_join(transitions) %>%
+  sample_n(1, weight = chance) %>%
+  ## We rename: what used to be word2 can go in the word column
+  select(word = word2) %>%
+  bind_rows(frame, .)
+```
+
+Why is that useful? Because now we can combine this join and the wordcounts to keep doing the same process!
+
+```{r}
+add_a_row <- function(frame, transitions) {
+  next_row <- frame %>%
+    ## we're extending just the last line.
+    tail(1) %>%
+    inner_join(transitions, by = intersect(names(.), names(transitions))) %>%
+    sample_n(1, weight = chance) %>%
+    ## Rather than select just the second word, we drop the
+    ## other two. This makes the function extensible to longer chains.
+    select(-word, -chance)
+
+  ## We have to give the original names back.
+  names(next_row) <- names(frame)
+
+  ## Return them bound back together
+  bind_rows(frame, next_row)
+}
+
+tibble(word = "america") %>%
+  add_a_row(transitions) %>%
+  add_a_row(transitions) %>%
+  add_a_row(transitions) %>%
+  add_a_row(transitions) %>%
+  add_a_row(transitions) %>%
+  add_a_row(transitions) %>%
+  add_a_row(transitions) %>%
+  add_a_row(transitions) %>%
+  add_a_row(transitions) %>%
+  add_a_row(transitions) %>%
+  add_a_row(transitions) %>%
+  add_a_row(transitions) %>%
+  add_a_row(transitions) %>%
+  add_a_row(transitions)
+```
+
+```{r}
+
+length_2_transitions <- allSOTUs %>%
+  mutate(word2 = lag(word, 1), word3 = lag(word, 2)) %>%
+  group_by(word, word2, word3) %>%
+  summarize(chance = n())
+
+length_2_transitions %>% filter(word == "united", word2 == "states")
+
+tibble(word = "united", word2 = "states") %>%
+  add_a_row(length_2_transitions)
+```
+
+
+```{r}
+word <- "i"
+output <- data_frame(word = "i")
+
+while (nrow(output) < 30) {
+  output <- add_a_row(output, transitions)
+  tail <- output %>% tail(1) %>% pull(word)
+  cat(tail, " ")
+}
+```
+
+
+
+How would we make the same function work over longer stretches? 
+
+First, we'd just make the transition probabilities apply over stretches of three words.
+This operates under the same general principle, but we divide the count of word3 by the bigram count that precedes it.
+
+```{r}
+transitions <- allSOTUs %>%
+  mutate(word2 = lag(word, 1), word3 = lag(word, 2)) %>%
+  filter(year > 1912) %>%
+  group_by(word) %>%
+  mutate(word1Count = n()) %>%
+  group_by(word, word2) %>%
+  mutate(chance = n() / word1Count, bigramCount = n()) %>%
+  group_by(word, word2, word3) %>%
+  summarize(trigramChance = n() / bigramCount[1])
+```

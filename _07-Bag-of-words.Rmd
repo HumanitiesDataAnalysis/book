@@ -1,0 +1,267 @@
+---
+title: "Thinking of Texts as Data"
+author: "Ben Schmidt"
+date: "Febrary 29, 2019"
+output: pdf_document
+---
+
+# The Bag of Words
+
+For most of the rest of this semester, we'll be talking about a particular *sort* of textual analysis: what are called *bag of words* approaches, and their most important subset, the *vector space* model of texts.
+
+The key feature of a bag of words approach to text analysis is that it ignores the order of words in the original text.
+These two sentences clearly mean different things:
+
+1. "Not I, said the blind man, as he picked up his hammer and saw."
+
+2. "And I saw, said the not blind man, as he picked up his hammer."
+
+But they consist of the same core set of words. The key question in working with this kind of data is the following: what do similarities like that mean? You'll sometimes encounter a curmudgeon who proudly declares that "literature is not data" before stomping off. This is obviously true. And, as in the concordances we constructed last week or the digital humanities literature that relies more heavily on tools from natural language processing, there are many ways to bring some of the syntactic elements of language into play.
+
+But bag-of-words approaches have their own set of advantages: they make it possible to apply a diverse set of tools and approaches from throughout statistics, machine learning, and data visualization to texts in ways that can often reveal surprising insights. In fact, methods developed to work with non-textual data can often be fruitfully applied to textual data, and methods primarily used on textual data can be used on sources that are not texts. You may have an individual project using humanities data that is *not* textual. For example, we saw last week how Zipf's law of word distributions applies to our city sizes dataset just as it applies to word counts. Almost all of the methods we'll be looking at can be applied as easily, and sometimes as usefully, to other forms of humanities data. (Streets in a city, soldiers in an army, or bibliographic data.) But to do so requires transforming them into a useful model. 
+
+## The term-document matrix
+
+The key concept in most of these is something called the "term-document matrix." This is a data structure extremely similar to the ones that we have been building so far: in it, each *row* refers to a column. 
+
+This is not "tidy data" in Wickham's sense, so it can be easily generated from it using the `spread` function in his `tidyr` package. Let's investigate by looking at some state of the Union Addresses.
+```{r, warning=FALSE, echo=FALSE}
+library(tidyverse)
+library(tidytext)
+```
+
+```{r readSOTUs, cache=TRUE}
+
+all_files <- list.files("../data/SOTUS/", full.names = T)
+
+readfile <- function(filename) {
+  read_lines(filename) %>%
+    tibble(text = .) %>%
+    filter(text != "") %>%
+    # Add a counter for the paragraph number
+    mutate(paragraph = 1:n()) %>%
+    unnest_tokens(word, text) %>%
+    mutate(filename = filename %>%
+      str_replace(".*/", "") %>%
+      str_replace(".txt", ""))
+}
+
+
+allSOTUs <- all_files %>%
+  map_dfr(readfile) %>%
+  mutate(year = as.numeric(filename))
+```
+
+With state of the union addresses, the most obvious definition of a document is a speech: we have that here in the frame "year". 
+
+We also want to know how many times each word is used. You know how to do that: through a group_by and `summarize` function.
+
+```{r}
+counts <- allSOTUs %>%
+  mutate(word = tolower(word)) %>%
+  group_by(year, word) %>%
+  summarize(count = n()) %>%
+  ungroup()
+
+counts %>% head(30)
+```
+
+In a term-document matrix, the terms are the column names, and the values are the counts. To make this into a term-document matrix, we simply have to spread out the terms along these lines.
+
+```{r}
+
+td_matrix <- counts %>% filter(word != "") %>% spread(word, count, fill = 0)
+
+counts <- counts %>% filter(word != "")
+```
+
+Usually, we've looked at data with many rows and few columns. Now we have one that is 229 columns rows by 29,000 columns. Those 10,000 columns are the distinct rows.
+
+Later, we'll work with these huge matrices. But for now, let's set up a filter to make the frame a little more manageable.
+
+Note that I'm also renaming the 'year' column to '.year' with a period.
+
+That's because 'year' is a word as well as a column, and in the 
+wide form we can't have columns capturing both meanings.
+
+
+
+```{r}
+
+td_matrix <- counts %>%
+  group_by(word) %>%
+  mutate(.year = year) %>%
+  select(-year) %>%
+  filter(sum(count) > 100) %>%
+  ungroup() %>%
+  spread(word, count, fill = 0)
+
+td_matrix %>% head(30)
+```
+
+Consider some slices of the term-document matrix. These look sort of like what we've been doing before.
+
+```{r}
+ggplot(td_matrix %>% filter(.year > 2000)) + aes(x = america, y = freedom, label = .year) + geom_text()
+```
+
+
+```{r}
+ggplot(td_matrix) + aes(x = .year %>% as.numeric(), y = freedom, label = year) + geom_line()
+```
+
+```{r}
+ggplot(td_matrix) + 
+  aes(x = the, y = and, label = .year) + 
+  geom_text()
+```
+
+```{r}
+
+ggplot(td_matrix) +
+  aes(x = the, y = and, color = .year) +
+  geom_path() +
+  scale_color_viridis_c() +
+  scale_x_log10() +
+  scale_y_log10()
+```
+
+
+With this sort of data, it's more useful to compare against a different set of texts.
+
+```{r}
+
+parties <- read_csv("../data/SOTUmetadata.csv", col_names = c(".president", ".year", ".party", ".sotu_type"), skip = 1)
+td_matrix <- td_matrix %>% inner_join(parties)
+```
+
+Here's an ggplot of usage of "and" and "for" in State of the Union addresses since 1981
+
+```{r}
+
+td_matrix %>%
+  filter(.year > 1981) %>%
+  ggplot() +
+  aes(x = `for`, y = and, pch = .president, color = .party) + 
+  geom_point(size = 5) + 
+  scale_color_brewer(type = "qual")
+```
+
+Note that we can get even more complicated: for instance, adding together lots of different words by using math in the aesthetic definition.
+
+```{r}
+td_matrix %>%
+  filter(.year > 1992) %>%
+  ggplot() + aes(x = america / world, y = military / economy, color = .party, pch = .president) + geom_point(size = 5) + scale_x_log10() + scale_y_log10()
+```
+
+As an in-class challenge--can you come up with a chart that accurately distinguishes between Democrats and Republicans?
+
+
+
+There's a big problem with this data: it's not *normalized.* Bill Clinton used to talk, a lot, in his state of the union speeches. (We can prove this with a plot)
+
+```{r}
+counts %>%
+  group_by(year) %>%
+  summarize(count = sum(count)) %>%
+  ggplot() + aes(x = as.numeric(year), y = count) + geom_line()
+```
+
+```{r}
+counts %>%
+  filter(word == "i") %>%
+  ggplot() + aes(x = as.numeric(year), y = count) + geom_line()
+```
+
+We can normalize these plots so that the term-document matrix gives the relative use per words of text. By setting `ratio = count/sum(count)` inside a `mutute` call, you get the percentage of the count.
+
+
+```{r}
+normalized <- counts %>%
+  group_by(year) %>%
+  mutate(ratio = count / sum(count)) %>%
+  ungroup()
+
+
+normalized %>% filter(word == "i") %>% ggplot() + aes(x = as.numeric(year), y = ratio) + geom_line()
+```
+
+
+
+
+```{r}
+norm_data_frame <- normalized %>% group_by(word) %>% filter(mean(ratio) > .0005) %>% select(-count)
+
+norm_td_matrix <- norm_data_frame %>% ungroup() %>% mutate(.year = year) %>% select(-year) %>% spread(word, ratio, fill = 0)
+```
+
+
+If you install the `rgl` library, you can look at some of these plots in 3 dimensions. This is confusing; 3d plotting is almost *never* a good idea. But by rotating a plot in 
+3-d space, you can begin to get a sense of what any of these efforts do.
+
+```{r, eval = FALSE}
+rgl::plot3d(x = as.numeric(norm_td_matrix$a), y = norm_td_matrix$freedom, z = norm_td_matrix$education, col = "red")
+```
+
+
+## Principal Components and dimensionality reduction
+
+Principal Components are a way of finding a projection that maximizes variation. Instead of the actual dimensions, it finds the single strongest line through the high-dimensional space; and then the next; and then the next; and so forth.
+
+```{r plotPRComp}
+
+principal_components_model <- norm_td_matrix %>%
+  select(-.year) %>%
+  prcomp() # Do a principal components analysis: this is built into R.
+
+PC_SOTUS <- principal_components_model %>%
+  predict() %>% # Predict the pincipal components locations for each document.
+  as_tibble() %>% # It's an old type of data called a matrix; we want a data frame.
+  bind_cols(norm_td_matrix %>% select(.year)) # Attach just the years from the original which have been lost., binding along the column edges
+
+PC_SOTUS %>% ggplot() + geom_point(aes(x = PC1, y = PC2, color = .year)) + scale_color_viridis_c()
+```
+
+The same plot, but colored by post-1980 president.
+Here you can see the the principal components are separating out Barack Obama and Bill Clinton separately from the other presidents.
+
+```{r plotPRCompByPresident}
+PC_SOTUS %>%
+  filter(.year > 1977) %>%
+  inner_join(parties) %>%
+  ggplot() +
+  geom_point(aes(x = PC1, y = PC2, color = .president, pch = .party), size = 5) + scale_color_brewer(type = "qual")
+```
+
+These models are created simply as weights against the word counts; we can extract those from the model by `pluck`ing the rotation element. 
+
+> Definition: **`pluck`**. `pluck` is a verb that works on non-data-frame element like models: it selects an element by its character name.
+> In more traditional R, `pluck(model, "rotation")` might be written either as `model[["rotation"]]`
+> or, more commonly, `model$rotation`.) Those methods are more concise in a line, but are awkward inside a chain.
+
+The more modern speeches are characterized by using language like "we", "our", and "i";
+the older ones by 'the', 'of', 'which', and 'be'.
+
+```{r explorePRcompWeights}
+word_weights <- principal_components_model %>%
+  pluck("rotation") %>%
+  as_tibble(rownames = "word")
+
+word_weights %>%
+  gather(dimension, weight, -word) %>%
+  filter(dimension == "PC1") %>%
+  arrange(-weight) %>% head(10)
+
+word_weights %>%
+  gather(dimension, weight, -word) %>%
+  filter(dimension == "PC1") %>%
+  arrange(weight) %>% head(10)
+```
+We can plot these too! It's a little harder to read, but these begin to cluster around different types of vocabulary.
+
+```{r}
+word_weights %>% filter(abs(PC1) > .02) %>% ggplot() + geom_text(aes(x = PC1, y = PC2, label = word))
+```
+
+The "Word Space" that Gavin describes is, in the broadest sense, related to this positioning of words together by document. 

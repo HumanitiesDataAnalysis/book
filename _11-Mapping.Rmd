@@ -1,0 +1,351 @@
+---
+title: "11 Geocomputing."
+author: "Ben Schmidt"
+date: "March 28, 2019"
+output: html_document
+---
+
+# Geography
+
+Note: the best analogue to this section is Robin Lovelace's [free online book 'Geocomputation with R.'](https://geocompr.robinlovelace.net/) My goal here is to give a shorter, more opinionated account of
+mapping in R than he provides, and to show the connection between mapping and the other algorithms we've already 
+discussed, especially with reference to the kind of data history and English students are likely to encounter.
+
+You may have looked in other classes at geodata in a framework like ArcGIS or QGIS. These programs--geographic information systems--are indispensable for certain kinds of map making, such as tracing historic maps to present-day spaces. But
+one of the big shifts in the way maps are made in the past ten years has been that the stranglehold of geo-specific
+packages--especially those created by ESRI--has started to fade. It turns out that regular old information systems can
+handle geography quite well; and so there's a rise of interesting new paradigms for mapping in languages. These are all useful in different ways. Interactive mapping is possible through a variety of sophisticated vector tile packages in Javascript (from not just Google maps, but also the impressive new map visualization library from Uber, `deck.gl`) and through the D3 ecosystem, which has the best support for esoteric map projections of any language.^[projections-caveat] Python's [Geopandas](http://geopandas.org/) and [Shapely](https://pypi.org/project/Shapely/) packages give a sound route towards working with maps as data, and allow interesting representations of topology. 
+
+^[projections-caveat]: D3's support for incredibly sophisticated projections is largely due on a shortcut it takes; its projections generally treat the earth as a sphere, when in fact it is has a lumpy, distinct shape of its own, elongated in some places and squashed in others.
+
+R has long had decent mapping packages, but the new standard is the `sf` (for "simple features") package by Edzer Pebesma.[@pebesma_simple_2018]. There are other, older ways to read in data, such as the `sp` package, and sophisticated geographic algorithms in a variety of packages. You may fid older code online doing things using `sp`-based approaches. I recommend staying entirely within `sf`, if you're going to do maps in R ; because it allows you to treat spatial data as a table of counts in the same sensible way that 
+
+```{r setup, include=FALSE}
+library(maps)
+library(tidyverse)
+library(sf)
+```
+
+An `sf` object is basically a tidy, row-per entry data frame; each row is a single geographic entity, or *feature*. 
+
+There are a few differences, though: 
+
+1. Each feature has a special `geometry` field, that contains spatial data.
+2. There is a long series of preliminary data that contains additional data about projections.
+
+## Working with SF Objects.
+
+### Reading shapefiles.
+
+There are several different ways to make an sf object. One is to just read in any shapefile, geojson, or other spatial object using the **`st_read`** function. This is essentially the same 
+as the `read_csv` functions with which you're already familiar, except that it works on a variety of different types of data; and that you should add an additional argument to the function `stringsAsFactors=FALSE`, which ensures that all text fields behave the same way as in `dplyr`. (The elimination of the stringsAsFactors default is one of the things that makes it much easier to work with tidyverse objects; the creators of the `sf` package have chosen to use the older R defaults for back compatability.)
+
+```{r}
+states <- st_read("../data/maps/cb_2017_us_state_5m.shp", stringsAsFactors = FALSE)
+```
+
+### Converting point data
+
+Another is to *convert* an existing object by telling where the latitude and longitude fields are.
+
+We can do this with our city data from earlier in the semester. The key function here is **`st_as_sf`**, which takes an ordinary dataframe and turns it into an sf object. In order for that to happen, you need to tell it which columns are geographic, so that it can bind those into a new `geometry` feature; and a "crs" (coordinate reference system) which specifies what kind of coordinates you're passing in. The CRS argument is required, but will almost always be 4326, which is the [EPSG code] to represent plain latitude and longitude.
+
+```{r}
+cities <- read_csv("../data/CESTACityData.csv") %>%
+  # Removes both NA values and those coded as 0.
+  filter(!is.na(LAT), LAT != 0) %>%
+  st_as_sf(coords = c("LON", "LAT"), crs = 4326)
+```
+
+### Loading data through R packages
+
+Finally, a number of common shapes are available directly in R without downloading through the `rnaturalearth` package.
+
+```{r}
+library(rnaturalearth)
+countries <- ne_countries(scale = "medium", returnclass = "sf")
+```
+
+### Data manipulation
+
+You can treat sf objects just like dataframes for most purposes; for instance, you
+can mutate countries to create a field for per-capita GDP and then make a boxplot to
+understand the categories it uses.
+
+```{r}
+countries %>%
+  mutate(gdp_per_capita = gdp_md_est / pop_est) %>%
+  ggplot() + aes(x = str_wrap(economy, 15), y = gdp_per_capita) + geom_boxplot() + scale_y_log10() +
+  geom_point(aes(size = pop_est, color = continent), position = position_jitter()) + theme(legend.position = "bottom")
+```
+
+### Cartography
+
+But you can also view `sf` features as a map. The easiest way to do this is by using the **`geom_sf`** function in ggplot. Just as `geom_point` adds a point, `geom_sf` adds any spatial element to a chart. 
+
+
+```{r}
+
+countries %>%
+ # st_transform(crs = "+proj=moll") %>%
+  ggplot() +
+  geom_sf(aes(fill = economy), lwd=0.1) + 
+  theme_minimal() +
+  labs(title="World Countries by economic classification")
+
+```
+### Choosing and setting projections.
+
+The chart above plots directly in latitude and longitude. This is convenient, but is also something that you should never do for a final map; since the world is a sphere, a degree of longitude is only as large as one of latitude at the equator.
+
+But those latitude and longitude numbers are baked into the `sf` object; so you need a verb to transform it. That is **`st_transform`**; it allows you to change the CRS (coordinate reference system) of an object.
+
+There are two important ways to define a projection. One is as a number; this refers to a list of "EPSG" codes. You'll generally come across them if you search the Internet. If you search, say, for "EPSG Colorado map projection," it will lead you 
+to the page for [EPSG:26954](https://spatialreference.org/ref/epsg/nad83-colorado-central/); pasting this number in will then 
+give you a good projection for Colorado that captures how the (rectangular) state is narrower at the top than the bottom.
+
+```{r}
+cities %>%
+  filter(ST=="CO") %>%
+  st_transform(crs = 26954) %>%
+  ggplot() +
+  geom_sf(data = states %>% filter(STUSPS == "CO") %>% st_transform(crs=26954)) + 
+  geom_sf() + theme_minimal()
+```
+
+If you are plotting either the whole world, or some relatively obscure part of it, though, you may need to make a decision.
+Since the Earth is (almost) a sphere, any flat projection will bring some kind of distortion. The choice of map projection is about meeting two incompatible goals. When you wade through options, consider the tradeoffs you make on the following fronts:
+
+1. Preserving area. A projection that preserves area is called an 'equal area' projection. A good choice at the global scale is the **'Mollweide'** projection; for national mapping of large countries (like Russia, the US, or China) an **Albers** projection is best. At the local scale, such as a single city, area distortions are unlikely to be important and you can focus on the other goal:
+
+2. Preserving shape. A projection that preserves local shapes is called a 'conformal' projection. At the global scale, the Mercator projection is widely used. (Too many well-educated people know only one thing about about map projections; that the Mercator projection is distortionary and therefore bad.) For regional mapping, the Lambert conformal cylindrical projection is frequently deployed in regions far from the equator; closer to the equator, the Mercator projection is fine. For geographic entities that extend mostly north-south (like Chile or California) a transverse Mercator projection works better than the traditional Mercator.
+
+```{r}
+
+#make_background = function(crs) {st_graticule(ndiscr = 1000, margin = 10e-5) %>%
+#  st_transform(crs = crs) %>%
+#  st_convex_hull() %>%
+#  summarise(geometry = st_union(geometry))
+#}
+
+world %>%
+  st_transform(crs = "+proj=moll") %>%
+  ggplot() +
+  geom_sf(aes(fill = economy), lwd=.15)
+```
+
+## Mapping the Ancient World.
+
+To explore some of the ways that 
+
+```{r}
+
+crs <- "+proj=aeqd +lat_0=41.9 +lon_0=12.5 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m"
+
+EUproject <- . %>% st_transform(crs = crs)
+
+bbox <- countries %>% filter(admin %in%
+  #  c("Italy", "Greece", "Israel")
+  c("Ireland", "Iran", "Egypt", "Morocco", "Estonia")) %>% EUproject() %>% st_bbox()
+
+ancient <- countries %>% EUproject() %>% st_crop(bbox)
+
+ggplot(ancient) + geom_sf()
+```
+
+grid <- st_make_grid(bbox %>% st_as_sfc(), n = c(60, 60), square = FALSE) %>% st_sf() %>% mutate(grid_id = 1:n())
+
+pleiades <- read_csv("~/Downloads/pleiades-places-latest.csv.gz") %>%
+  filter(!is.na(reprLong)) %>%
+  st_as_sf(coords = c("reprLong", "reprLat"), crs = 4326) %>%
+  EUproject()
+
+pleiades %>%
+  st_join(grid) %>%
+  as_tibble() %>%
+  select(-geometry) -> types
+
+types %>%
+  group_by(grid_id) %>%
+  summarize(points = n()) %>%
+  inner_join(grid, .) %>%
+  filter(points > 20) %>%
+  ggplot() +
+  scale_fill_viridis_c(trans = "log") +
+  geom_sf(data = ancient %>% summarize(shape = 1), fill = "brown", color = "#00000000") +
+  theme(panel.background = element_rect(fill = "aliceblue")) + geom_sf(aes(fill = points)) + coord_sf(expand = FALSE)
+```
+
+Looking at the pure counts tells us something. I would not have known ahead of time that the area around Carthage is as heavily represented as around Rome or Athens, 
+
+```{r}
+
+source("../R/commonFunctions.R")
+
+types %>%
+  mutate(featureTypes = str_split(featureTypes, ", ?")) %>%
+  unnest(featureTypes) %>%
+  count(grid_id, featureTypes) %>%
+  arrange(-n) %>%
+  group_by(grid_id) %>%
+  filter(!featureTypes %in% c("labeled feature", " settlement-modern", " unlabeled")) -> counts
+
+counts %>%
+  summarize_llr(featureTypes, count = n) %>%
+  group_by(grid_id) %>%
+  filter(dunning_llr > .05) %>%
+  arrange(-dunning_llr) %>%
+  slice(1) %>%
+  ungroup() %>%
+  arrange(-dunning_llr) -> tops
+
+tops %>%
+  ungroup() %>%
+  mutate(feature = fct_lump(featureTypes, 7)) %>%
+  filter(!feature %in% c("Other", "people")) %>%
+  inner_join(grid, .) %>%
+  ggplot() + scale_fill_brewer(type = "qual") +
+  geom_sf(data = ancient %>% summarize(shape = 1), fill = "brown", alpha = .1, color = "#00000000") +
+  theme(panel.background = element_rect(fill = "aliceblue")) +
+  geom_sf(aes(fill = feature, alpha = dunning_p), color = "#00000000") + coord_sf(expand = FALSE)
+```
+
+```{r}
+provinces <- st_read("../data/provinces.geojson.txt") %>% EUproject()
+
+pleiades %>%
+  st_join(provinces) %>%
+  st_set_geometry(NULL) %>%
+  filter(!is.na(name)) -> types
+
+types %>%
+  mutate(featureTypes = str_split(featureTypes, ", ?")) %>%
+  unnest(featureTypes) %>%
+  count(name, featureTypes) %>%
+  arrange(-n) %>%
+  group_by(name) %>%
+  filter(featureTypes %>% str_detect("people|mountain|river|feature|settlement|unlabeled|unknown|unlocated", negate = TRUE)) -> counts
+```
+
+```{r}
+counts %>%
+  group_by(name) %>%
+  summarize_llr(featureTypes, count = n) -> llrs
+
+llrs %>%
+  count(featureTypes, wt = abs(dunning_llr)) %>%
+  arrange(-n) %>%
+  slice(1:8) %>%
+  inner_join(llrs) %>%
+  group_by(name) %>%
+  arrange(-dunning_llr) %>%
+  slice(1) -> tops
+
+
+tops %>%
+  ungroup() %>%
+  inner_join(provinces, .) %>%
+  ggplot() +
+  scale_fill_brewer(type = "qual") +
+  geom_sf(data = ancient %>% summarize(shape = 1), fill = "brown", alpha = .1, color = "#00000000") +
+  theme(panel.background = element_rect(fill = "aliceblue")) +
+  geom_sf(aes(fill = featureTypes, alpha = dunning_p), lwd = 0.2) +
+  coord_sf(expand = FALSE) +
+  labs(title = "Most statistically distinct ")
+```
+
+```{r}
+
+grid <- cities %>%
+  # Use a sensible projection; for Southeast Asia, 4326 might be fine.
+  st_transform(crs = 5070) %>%
+  filter(ST != "AK", ST != "HI") %>%
+  # Create a grid from the bounding box of the points.
+  st_bbox() %>%
+  st_as_sfc() %>%
+  st_make_grid(n = c(40, 40), square = FALSE) %>%
+  # The grid is an 'sfc' object: here we make it an 'sf' object and add an identier.
+  st_sf() %>%
+  mutate(grid_number = 1:n())
+
+grid_counts <- cities %>%
+  st_transform(crs = 5070) %>%
+  st_join(grid) %>%
+  as_tibble() %>%
+  count(grid_number)
+
+grid %>% inner_join(grid_counts) %>% ggplot() + geom_sf(aes(fill = n))
+```
+
+
+## Spatial joins
+
+Suppose we want to count the population by state, by year.
+
+We can do this by using the **`st_join`** function, which is essentially
+like `inner_join` for geographies.
+
+To do a spatial join 
+
+```{r}
+
+
+states %>%
+  st_transform(crs = 2163) %>%
+  select(STUSPS) %>%
+  st_join(cities %>% st_transform(crs = 2163)) %>%
+  group_by(STUSPS) %>%
+  st_set_geometry(NULL) %>%
+  summarize(count = n()) %>%
+  inner_join(states, .) %>%
+  st_transform(cr = 2163) %>%
+  ggplot() +
+  theme_minimal() +
+  theme(panel.background = element_rect(fill = "aliceblue")) +
+  geom_sf(
+    data = world %>%
+      filter(continent == "North America") %>%
+      st_transform(crs = 2163) %>%
+      st_crop(states %>% st_transform(cr = 2163) %>% st_bbox()),
+    fill = "beige", lwd = 0
+  ) +
+  geom_sf(aes(fill = count), lwd = 0.2)
+
+states %>% filter(STUSPS %in% c("IL", "IN")) %>% summarize(count = n()) %>% ggplot() + geom_sf()
+```
+
+```{r}
+ne_top_pops <- cities %>%
+  gather(year, pop, `1790`:`2010`) %>%
+  group_by(CityST) %>%
+  arrange(-pop) %>%
+  slice(1) %>%
+  mutate(year = as.numeric(year))
+```
+
+To build a map, you simply composite layers in ggplot. Choose attractive colors and sensible geometries.
+
+```{r}
+
+lower48 <- states %>% filter(STATEFP %>% as.character() %>% as.numeric() < 55, STUSPS != "AK", STUSPS != "HI") %>% st_transform(crs = 5070)
+
+
+ne_cities <- cities %>%
+  st_transform(crs = 5070) %>%
+  st_join(lower48 %>% filter(STUSPS %in% c("ME", "MA", "NH", "VT", "CT", "RI")), join = st_intersects) %>%
+  filter(!is.na(STUSPS))
+
+# Create a bounding box shaped like the United States
+bbox <- lower48 %>% st_transform(crs = 5070) %>% filter(STUSPS %in% c("AR", "MI", "ME", "SC")) %>% st_bbox()
+us_clip <- . %>% st_transform(crs = 5070) %>% st_crop(bbox)
+
+ggplot(ne_top_pops %>% us_clip() %>% sample_n(1000)) +
+  geom_sf(data = world %>% filter(continent == "North America") %>% us_clip(), fill = "beige", lwd = 0) +
+  geom_sf(data = states %>% us_clip()) +
+  geom_sf(aes(color = `year`, size = `pop`)) +
+  theme_void() +
+  coord_sf(xlim = bbox[c(1, 3)], ylim = bbox[c(2, 4)], expand = FALSE) +
+  scale_color_viridis_c() +
+  theme(panel.background = element_rect(fill = "aliceblue"))
+```
+

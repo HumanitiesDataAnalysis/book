@@ -1,0 +1,7 @@
+book_filename: "HDA_text"
+language:
+  ui:
+    chapter_name: "Chapter "
+delete_merged_file: true
+new_session: yes
+rmd_files: ["index.Rmd", "The Gift.Rmd", "01-Data and Formal Languages.Rmd", "01-regex_problems.Rmd", "02-Working in R.Rmd"]

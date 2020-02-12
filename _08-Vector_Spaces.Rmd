@@ -1,0 +1,179 @@
+---
+title: "Word2Vec"
+author: "Ben Schmidt"
+date: "2019-02-28"
+output: html_document
+---
+
+# The embedding paradigm
+
+The last chapter looked at one particular abstraction for thinking about texts in a high-dimensional space: the term-document matrix. 
+In this conception, you can think of 
+
+We even looked at a way of abstracting out from this space using principal components analysis to create a new, rotated space where the columns
+of our table or matrix.
+
+
+## Word2Vec and embedding spaces.
+
+Load in a binary word2vec file. **Note**: you'll need to download these from https://www.dropbox.com/sh/jv0nq2tpc5dvscj/AADLQmB9uobTja7xv934ZFQ2a?dl=0.
+
+```{r}
+library(tidyverse)
+library(wordVectors)
+```
+
+```{r install_wordVectors, cache=TRUE}
+if (!require(wordVectors)) {
+  devtools::install_github("bmschmidt/wordVectors")
+}
+```
+
+```{r load_RMP, echo=FALSE, cache=TRUE}
+model <- read.vectors("~/Dropbox/Workshops/word_vectors/demo_vectors/RMP.bin")
+```
+
+## Exploring Vectorspaces: vectors and similarity.
+
+The most basic thing that you can do in a vector model is to look at an individual vector. We can look at these numbers directly: but there's not much point, because
+they have little intrinsic meaning.
+
+```{r}
+model %>% extract_vectors("science", "teacher", "humanities")
+```
+
+Nearly as basic, but actually useful, is finding words that are used in a similar manner in the corpus.
+So: let's try to look at some individual lists of words. So let's choose a seed word: I'm going to pick
+"unprofessional," because I know it's interesting in reviews.
+
+```{r}
+model %>% closest_to("unprofessional", 5)
+```
+
+
+This should be an iterative process, in which you explore a particular track that arises. I find it ironic that students mis-spell "unproffesional," of all words: so let's look at more words like that.
+
+```{r}
+model %>% closest_to("unproffesional", 5)
+```
+
+
+So now we can start to build up a more elaborate list. Note the tilde in front of the word "unproffesional"; 
+this is a special trick that lets us do math inside an expression with words. 
+
+What this lets us start to do is an *arithmetic of words*; we can add, subtract, or multiply words together.
+
+```{r }
+model %>% closest_to(~ "unproffesional" + "incosiderate" + "degrating" + "disrespectfull" + "beligerant", n = 10)
+```
+
+### Plotting
+
+Looking at ordered lists is an imperfect way to deal with a high dimensional space. Visualization can be a powerful tool to work through documents like this. We can start to see how these words relate to each other by looking at the best two-dimensional projections of the high dimensional space using principal components analysis. This requires a program that has two chunks; first to build up a list of words; and then to
+plot the portions of the full model that 
+
+```{r}
+unprofessional_words <-
+  model %>%
+  closest_to(~ "unproffesional" + "incosiderate" + "degrating" + "disrespectfull" + "beligerant", n = 50) %>%
+  pull(word)
+
+model %>%
+  extract_vectors(unprofessional_words) %>%
+  plot(method = "pca")
+```
+
+
+We can use these plots to look at the local structure of any slice that we like.
+
+```{r}
+unprofessional_words <- model %>%
+  closest_to(~"terrible", n = 50) %>%
+  pull(word)
+
+model %>%
+  extract_vectors(unprofessional_words) %>%
+  plot(method = "pca")
+```
+
+
+### Comparing similarities.
+
+OK: here's where humanities and science vector models really start to differ. I think we want to compare two *different* models.
+
+Let's first look at the words near to "history" in this space.
+
+```{r}
+history_words <- model %>% closest_to(~"history", n = 50) %>% pull(word)
+
+model %>%
+  extract_vectors(history_words) %>%
+  plot(method = "pca")
+```
+
+How is the word history used differently in a different model?
+
+We can load in a new model, and run *almost* the same code; note that here I change the word to 'model2'. 
+
+I'm going to use "glove", which is a general-purpose model.
+
+```{r read_glove, cache=TRUE}
+model2 <- read.vectors("~/Dropbox/Workshops/word_vectors/demo_vectors/glove.bin")
+history_words <- model2 %>% closest_to(~"history", n = 50) %>% pull(word)
+model2 %>%
+  extract_vectors(history_words) %>%
+  plot(method = "pca")
+```
+
+But remember those similarity scores? We can actually compare these two models directly.
+I have to pass a few more arguments to the functions here to get cleanly formatted outputs.
+
+```{r plot_differences}
+all_history <- model %>% closest_to(~"history", n = Inf)
+all_history_model2 <- model2 %>% closest_to(~"history", n = Inf)
+
+all_history %>%
+  # A 'by' argument to 'inner_join' keeps it from attempting to match on similarities.
+  inner_join(all_history_model2, by = c("word", "comparison")) %>%
+  # sort by decreasing size of the combined similarities. The ^2 exponent does a square; this is the pythagorean theorem.
+  arrange(-(similarity.x^2 + similarity.y^2)) %>%
+  head(100) %>%
+  filter(word != "history") %>%
+  ggplot() +
+  geom_text(aes(x = similarity.x, y = similarity.y, label = word))
+```
+
+
+## Extracting Vectors
+
+
+```{r}
+gender <- model %>% extract_vectors(~ "man" - "woman")
+quality <- model[["good"]] - model[["bad"]]
+
+list1 <- model %>% closest_to(gender, n = Inf)
+list2 <- model %>% closest_to(quality, n = Inf)
+
+list1 %>%
+  inner_join(list2, by = "word") %>%
+  arrange(-(similarity.x^2 + similarity.y^2)) %>%
+  filter(!grepl("[A-Z]", word)) %>% # No capitals; uncomment line to keep it.
+  head(500) %>%
+  ggplot() + geom_text() +
+  aes(x = similarity.x, y = similarity.y, label = word) +
+  labs(x = "Female to male", y = "Bad to good")
+```
+
+
+## Rejection: eliminating dimensions
+
+We can use a process called vector rejection to squash out the vector space so it loses its knowledge of vector spaces. This lets us compare between two different versions of the same vectorspace to see how different words shift.
+
+```{r rejection}
+genderless <- model %>% reject(~ "male" - "female")
+```
+
+
+## Alignment
+
+An interesting area of research involves alignment multiple models to each other.

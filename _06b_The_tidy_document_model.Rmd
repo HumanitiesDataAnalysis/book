@@ -1,0 +1,310 @@
+# Working with Humanities Text Sources in R.
+
+This chapter is outlines a useful way of thinking about exploratory textual analysis in R.
+
+The goals are threefold:
+
+1. Define a set of operations around the term-document model that avoids reifying a particular
+   way of thinking about text--as always, already existing in "documents." Instead, it emphasizes that
+   that 'document' is a category of analysis *you* create, represented by an operation we've already
+   been using--`group_by`.
+2. Giving concrete tools to do this work and other textual analysis in R on four sorts of text:
+   1. Raw text files like the State of the Union addresses we've been exploring.
+   2. TEI and other XML-based text formats that are *richer* than plain text, 
+      and that have extraordinary valuable metadata about the internal structure 
+      of documents.
+   3. "Non-consumptive" wordcount data like that distributed by JStor and the Hathi Trust that,
+      while *less rich* than plain text, allows quick research at scale on an extraordinary
+      quantity of data without much work.
+   4. Bookworm, Google Ngrams, and other web services that provide aggregate count data 
+      about extremely large digital libraries. 
+      
+3. In thinking about documents as flexible count data, to make clear that the algorithms
+   we use for textual analysis are actually *general* tools of data analysis.
+
+## The Variable-Document model
+
+The first principle of data analysis-as-text is what I call the 'variable-document model.'
+As we discussed last chapter, a fundamental object of many text-analysis operations is the 
+term-document matrix, a data representation of a corpus in which 
+
+Humanities textual analysis should build off of the term-document model in 
+exploratory work. But a major form of exploration that humanists often neglect 
+or, worse, write off as mere pre-processing, is the act of defining a term and 
+definining a document.
+
+Michael Witmore wrote a wonderful article in 2010 that I routinely assigned called 
+"The Multiple Addressibility of Text."@witmore_multiple_2010 The core intuition
+that he builds on, as a Shakespeare scholar used to dealing with a variety of manifestations
+of the same works, is that there are many different dimensions and scales on which text analysis
+proceeds. Sometimes we write about a specific line in a specific volume: sometimes we speak more generally about 
+a much larger category like "the science fiction novel" or "incunabulae."
+
+The 'book' or the 'document' is best seen as just one of many different ways of looking at documents: 
+
+> The book or physical instance, then, is one of many levels of address. 
+> Backing out into a larger population, we might take a genre of works to be the relevant level of address. 
+> Or we could talk about individual lines of print, all the nouns in every line, every third character in every third line.
+> All this variation implies massive flexibility in levels of address. 
+> And more provocatively, when we create a digitized population of texts, our modes of address become more and more abstract: 
+> all concrete nouns in all the items in the collection, for example, or every item identified as a “History” by 
+> Heminges and Condell in the First Folio. Every level is a provisional unity: stable for the purposes of 
+> address but also stable because it is the object of address. Books are such provisional unities. 
+> So are all the proper names in the phone book.
+
+### Groupings as documents
+
+It would be nice to have a formal language for describing the kind of operations that Witmore imagines.
+In some frameworks, you do this by explicitly creating `doc` elements. But fortunately, in the `tidyverse` framework, 
+we have a verb that describes creating a nesting of documents this kind of process: the `group_by` operator!
+
+A powerful way to treat term-document operations is thus to do any textual operations
+across the existing metadata groups. Suppose you want to calculate term frequencies. You can 
+do so with the following function, that counts words:
+
+```{r, include = FALSE}
+library(tidyverse)
+library(tidytext)
+```
+
+```{r, fig.height=3}
+
+summarize_tf = . %>% 
+    count(word) %>% 
+    mutate(tf = n/sum(n))
+
+sotu <- tibble(lines = read_lines("../data/SOTUS/2015.txt")) %>% unnest_tokens(word, lines)
+
+sotu  %>% summarize_tf %>% 
+  arrange(-tf) %>% 
+  filter(tf > 1/100) %>%
+  ggplot() + geom_bar(aes(x=reorder(word, tf), y = tf), stat="identity") +
+  coord_flip()
+  
+
+```
+
+But the beauty of grouping is that you can also use it to count across multiple groups at once. If we read in two state
+of the unions, we can reuse almost all of this code and simply add a color parameter.
+
+```{r}
+two_sotus = tibble(title = "Obama 2016", lines = read_lines("../data/SOTUS/2016.txt")) %>%
+  bind_rows(tibble(title = "Trump 2017", lines = read_lines("../data/SOTUS/2017.txt"))) %>%
+  unnest_tokens(word, lines)
+
+two_sotus %>%
+  group_by(title) %>%
+  summarize_tf() %>% 
+  group_by(word) %>%
+  filter(max(tf) > 1/100) %>%
+  ggplot() + 
+  geom_bar(aes(x=reorder(word, tf), y = tf, fill=title), stat="identity", position='dodge') +
+  coord_flip()
+
+```
+
+### Chunking
+
+Very often, it makes sense to break up a document into evenly sized chunks, which can then
+be used as new 'documents.'
+
+The **`add_chunks`** function does this for you, with a parameter 'chunk_length.'
+The chunk below divides up a State of the Union into 500-word chunks, and looks at
+the most common non-stopword in each. Even this simple heuristic reveals
+the path of the speech: from the economy, into sick and medical leave, to geopolitics
+and finally to a discussion of civility and politics.
+
+```{r}
+source("../R/commonFunctions.R")
+library(ggrepel)
+sotu %>% 
+  add_chunks(chunk_length = 400) %>%
+  anti_join(stop_words) %>%
+  group_by(chunk) %>%
+  count(word) %>%
+  arrange(-n) %>%
+  slice(1:3) %>%
+  ggplot() + 
+  geom_text_repel(aes(x=chunk, y = n, label=word))
+```
+
+
+### Programming, summarizing, and 'binding'
+
+Some functions like this already exist in tidytext, but the versions for this course differ in a few ways.
+
+First, `tidytext` requires you to specify a document: here, it's created by 'grouping.'
+Second, `tidytext` functions are called things like `bind_tf`. Here, the function is called `summarize_tf`,
+and it performs a summarization down to a statistic for each grouping (and word, 
+if relevant); if you wish it to be attached to the original data, you should run a `left_join` operation.
+
+In real life, this function doesn't generalize perfectly for two reasons. The `count` function assumes that you
+have a token called 'word'; but in different flows you might actually have a `bigram`, or `sentiment`, or `topic`.
+Additionally, it assumes that data exists as raw tidytext, but often you will have *already* created a column of columns,
+whether to save space or because that's how your data is presented. If you inspect the code to see how it looks, you'll see the
+following. There are defaults (`word` for the token definition, and a series of ones for counts); and there is 
+dplyr's odd quotation system for variables that uses the function `enquo` and the operator `!!`. 
+
+```{r}
+
+summarize_tf = function(data, token = word, count = rep(1, n())) {
+  token = enquo(token)
+  count = enquo(count)
+  data %>% 
+    count(!!token, wt = !!count, name = "n") %>% 
+    mutate(tf = n/sum(n))
+}
+
+sotu %>% summarize_tf(word) %>% arrange(-tf)
+
+```
+
+
+
+## TEIdytext and the variable-document model on XML
+
+Let's take as an example one of the most detailed TEI transcriptions out there: the Folger library's edition of Shakespeare's Sonnets.
+
+To load this in takes quite a while: currently the TEIdy function is not as quick as it could be. If someone wants to rewrite the XML parsing bits
+in C, I'd love to be in touch.
+
+```{r load_sonnets, cache = TRUE}
+
+sonnets = TEIdytext::TEIdy(system.file("extdata", "Son.xml", package="TEIdytext"))
+
+```
+
+The easiest way to get a sense of what any data frame looks like is just to look at it.
+
+This datatype can be quite difficult to look at, because TEI files have a huge amount of information in 
+them. 
+
+As required for TEI editions, this begins with a header that contains file metadata and definitions.
+
+The `.text` field contains the actual text nodes of the TEI-encoded text: the `.hierarchy` field tells you about the constellation of nodes that define it.
+
+```{r}
+sonnets %>% head(5)
+```
+
+If we wish to look at the actual poems, we'll need to look at the **body of the TEI element**, which is required to be there. (If you're working with non-TEI XML, there may not be a body element or a header; you can )
+
+The Shakespeare text is remarkable in that it doesn't require tokenization: each individual word in the document has been separately annotated in a <w> tag, while
+every space (!) is wrapped in a `<c>` tag.
+
+
+
+```{r}
+sonnets %>% filter(body > 0) %>% head(10) %>% select_if(~ !all(is.na(.x)))
+```
+
+For various elements, the TEIdytext program automatically generates running counts; there are also internal counts inside the TEIdy. In general, you should always use the
+real TEI elements, rather than the ones created by TEIdy.
+
+The tidy abstraction for XML works by giving column identifiers for every tag that's present. For example, if there is a tag in
+the xml like `<div1 id="c1">`, every text element inside it will have at least two columns with non-NA values: `div1` will be an
+ordered number, and `div1.id` will be "c1."
+
+Not every organizing feature exist in the TEI hierarchy. Some--like line numbers--are described through tags called **`milestone``s**.
+
+This is because the organizing feature of TEI--and XML in general--is that every document must be described as a hierarchy of tags. But not all elements
+don't fit evenly into a hierarchy; a *section* break might fall, for instance, in the middle of the page break. `milestone` tags split this difference by making it possible 
+indicate places where breaks take.
+
+If, for instance, we want to select every line organized by sonnet and line number, we can use `tidyr::fill`
+to expand the `milestone.n` tags down.
+
+```{r}
+lines = sonnets %>%
+  # Make sure that there are no *other* milestones, like page numbers, in there.
+  filter(is.na(milestone) || milestone.unit == "line") %>% 
+  # Fill in all other elements with the line number
+  tidyr::fill(milestone.n) %>% 
+  # Select only sonnets (elements with a div2.id)
+  filter(!is.na(div2.id), w > 0) %>%
+  select(.text, div2.id, milestone.n)
+```
+
+With line numbers, now we can start to take this data in any direction, even integrating information that isn't in the original document.
+For example, by creating a new dataframe that encodes the rhyme scheme and joining it against the last words, we can quickly count the
+most common rhymes in Shakespeare's sonnets.
+
+```{r}
+top_words = lines %>% group_by(.text) %>% summarize(count=n())
+
+top_words %>% anti_join(lines %>% group_by(div2.id, milestone.n) %>% slice(n())  %>% ungroup %>% select(.text)) %>% arrange(-count)
+
+```
+
+```{r}
+rhyme_scheme = data_frame(
+  milestone.n = as.character(1:14), 
+  rhyme = c("A", "B", "A", "B", "C", "D", "C", "D", "E", "F", "E", "F", "G", "G")
+  )
+
+lines %>% 
+  group_by(div2.id, milestone.n) %>%
+  slice(n()) %>%   # Take the last word of each line.
+  inner_join(rhyme_scheme) %>%  # Assign "A", "B", etc to each line.
+  group_by(rhyme, div2.id) %>%
+  arrange(.text) %>%  # Arrange in alphabetical order
+  mutate(pair = c("first", "second")) %>%
+  # Drop the line number to make the spread operation work.
+  select(-milestone.n) %>%
+  spread(pair, .text) %>%
+  ungroup %>%
+  count(first, second) %>%
+  filter(n > 4) %>%
+  ggplot() + geom_bar(aes(x = str_c(first, second, sep = "/"), y = n), stat='identity') + coord_flip() + 
+  labs(title="All rhyme pairs used at least 5 times in Shakespeare's sonnets")
+                            
+```
+
+
+
+
+
+
+## hathidy, tidyDFR, and the variable-document model for wordcounts.
+
+A second kind of widespread text document are word counts
+
+
+```{r}
+library("hathidy")
+
+# If this fails, you may need to run:
+# devtools::install_github('HumanitiesDataAnalysis/hathidy')
+```
+
+### UNDER CONSTRUCTION
+
+## Bookworm databases
+
+In working with Hathi, you'll start to encounter the limits of 
+
+### UNDER CONSTRUCTION
+
+
+
+## Exercises
+
+### Working with TEI
+
+1. Create a list of the 30 words that Shakespeare use most commonly, but never rhymes. What distinguishes them?
+
+2. What are words that Shakespeare uses at the end of sonnets but not at the beginning?
+
+```{r, include = FALSE}
+lines %>% 
+  mutate(word = tolower(.text)) %>%
+  anti_join(stop_words) %>%
+  mutate(quatrain = floor(as.numeric(milestone.n)/4)) %>%
+  group_by(div2.id, quatrain) %>%
+  mutate(word_position = 1:n()) %>%
+  group_by(word) %>%
+  count(quatrain) %>%
+  mutate(share = n/sum(n)) %>%
+  filter(sum(n) > 20) %>%
+  ggplot() + geom_tile(aes(x = quatrain, y = word, fill = share), width = 2) + scale_fill_viridis_c()
+```

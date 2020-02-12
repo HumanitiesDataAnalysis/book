@@ -1,0 +1,181 @@
+---
+title: 'Week 10: Clustering and Modeling'
+author: "Ben Schmidt"
+date: "4/2/2015"
+output: pdf_document
+---
+
+
+```{r global_options, include=FALSE}
+library(tidyverse)
+```
+
+Last week we looked at **supervised learning and comparison**: techniques that use *known* metadata to compare groups.
+
+This is called "supervised" learning it sets as the goal the development of an algorithm that will mimic the operations of some existing classification, like metadata about who wrote a book.
+
+This week, the techniques we'll discuss are what it known as
+**unsupervised learning**; for inferring
+patterns out of data where you *don't* necessarily have data.
+
+
+
+# Clustering
+
+Clustering means putting sets into groups.
+
+We're going to talk about using a very large number of dimensions--the words in a document. But you can do it on a comparatively smaller number of features, as well. The simplest case is clustering on a single dimension. Let's go back to our list of cities as an example.
+
+```{r}
+
+cities <- read_csv("../data/CESTACityData.csv") %>% filter(`2000` > 350000)
+
+```
+
+How would you group these points together?
+
+Hierarchical clustering uses something called a *dendrogram* to do this. It finds the two closest points, and joins them together, pretending they're a single point ^[This is a simplification--in fact, there are a number of different ways to treat the amalgamated clusters.] It then finds the next two closest points, and joins *them* together; and keeps on going until there's a single group, encompassing everything.
+
+This is a two step process. First we create a hierarchical clustering model using the **`hclust`**
+function. Then, to visualize the model, we use the **`ggdendro`** package, and two functions inside of it: **`dendro_data`** and `**segment**`.
+
+```{r fig.height=9, fig.width=7}
+
+library(ggdendro)
+
+cities %>%
+  column_to_rownames("CityST") %>%
+  select(LON, LAT) %>% 
+  dist %>%
+  hclust %>%
+  dendro_data -> 
+  dendrogram
+
+dendrogram %>%
+  segment %>% 
+  ggplot() + 
+  geom_segment(aes(xend = xend, yend = yend)) + 
+  aes(x = x, y = y) + 
+  coord_flip() + 
+  scale_y_reverse(expand = c(0.2, 0)) + 
+  geom_text(data = dendrogram$labels, aes(label = label), adj=0)
+
+```
+
+
+But you could also do a three-dimensional clustering, that relates both location and population change.
+
+The scales will be very different on these, so you can use the R function **`scale`** to make them all occupy roughly the same range. (Try fiddling around with some numbers to see what it does, or just put in `?scale`.)
+
+That starts to cluster cities together based on things like both location and demographic characteristics. Now the growing cities of San Francisco and San Jose, for instance, are closer to each other than to Oakland: and New Orleans ends up connected to the Rust Belt cities of Detroit and Cleveland because it, too, experienced large population decreases.
+
+
+
+```{r}
+changes = cities %>% 
+  mutate(LON = scale(LON), LAT = scale(LAT), 
+         change = (`2010` / `2000`) %>% log %>% scale %>% as.vector)
+```
+
+```{r}
+
+cities %>%
+  mutate(LON = scale(LON), LAT = scale(LAT), change = (`2010` / `2000`) %>% log %>% scale %>% as.numeric) %>%
+  column_to_rownames("CityST") %>%
+  select(LON, LAT, change) %>%
+  dist %>%
+  hclust %>%
+  dendro_data ->
+  dendrogram
+
+dendrogram %>%
+  segment %>% 
+  ggplot() + 
+  geom_segment(aes(xend = xend, yend = yend)) + 
+  aes(x = x, y = y) + 
+  coord_flip() + 
+  scale_y_reverse(expand = c(0.2, 0)) + 
+  geom_text(data = dendrogram$labels, aes(label = label), adj=0, size=2)
+
+```
+
+You know what to use as a spatialized version of text: some document vectorization.
+Let's look at State of the Unions
+
+```{r SOTU-dendrogram, fig.height=6, cache = TRUE}
+
+source("../R/commonFunctions.R")
+
+sotu = read_all_SOTUs()
+
+sotu %>% 
+  filter(year > 1960) %>% 
+  group_by(year, filename, president) %>% 
+  summarize_tf_idf(word) -> tf
+
+tf %>% 
+  group_by(word) %>% 
+  summarize(tot = sum(tfidf)) %>% 
+  arrange(-tot) %>% slice(1:100) %>%
+  inner_join(tf) %>%
+  select(year, president, word, tfidf) %>%
+  mutate(id = paste(president, year)) %>%
+  spread(word, tfidf, fill = 0) -> words
+
+words %>%
+  column_to_rownames("id") %>%
+  dist %>%
+  hclust %>%
+  dendro_data -> dendrogram
+  
+dendrogram %>%
+  segment %>% 
+  ggplot() + 
+  geom_segment(aes(xend = xend, yend = yend)) + 
+  aes(x = x, y = y) + 
+  coord_flip() + 
+  scale_y_reverse(expand = c(0.2, 0)) + 
+  geom_text(data = dendrogram$labels, aes(label = label), adj=0, size=3)
+
+```
+
+
+To make a dendrogram, we once again take the distances and plot a hierarchical clustering.
+
+By making the labels be the authors, we can see whether the clusters are grouping similar people together.
+
+## K-means clustering
+
+Sometimes, it makes sense to choose a fixed number of clusters. Hierarchical clustering *can* provide this, but cutting the tree at any particular height. But an especially widely used form of find the best group of 5 (or 10, or whatever) is k-means clustering.  A nice example video is online [here](http://tech.nitoyon.com/en/blog/2013/11/07/k-means/).
+
+Let's go back to our data to see how kmeans handles the cities.
+
+```{r}
+
+library(broom)
+
+cities %>% select(LAT, LON) %>%
+  kmeans(centers = 6) ->
+  city_clusters
+
+city_clusters %>% broom::augment(cities) %>%
+  inner_join(tidy(city_clusters), by = c(".cluster"="cluster")) ->
+  cities_with_clusters
+
+ggplot(cities_with_clusters) + 
+  aes(x = LON, y = LAT, color = .cluster) + 
+  geom_point(size = 1) + 
+  borders(database = "state") +
+  coord_quickmap() + 
+  geom_point(aes(y=x1, x = x2), size = 4) + 
+  geom_segment(aes(xend = x2, yend = x1)) + xlim(-130, -60) + 
+  theme_minimal() + 
+  labs(title="Kmeans cluster centers")
+
+```
+
+## Kmeans and word2vec
+
+You can use this clustering to pull out similar groups of words in a word2vec model, as well.
+
+### Under Construction

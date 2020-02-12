@@ -1,0 +1,56 @@
+---
+title: "The Gift of Data"
+output: pdf_document
+---
+
+# The Gift of Data
+
+Humanists make stories, arguments, and narratives. "Data" is a word that, nowadays, sounds like
+it comes from a different vocabulary altogether. Reading belongs to the humanities; data analysis belongs to sciences. Data is used for proofs, discoveries, 
+and statistical inference. "Humanities Data" isn't quite an oxymoron, but it comes close.
+
+Moreover, there is a language of data that insists on treating data as a resource. One mantra emphasizes
+it as a natural resource; data is to be "mined," or "Data is the new oil". @anonymous_world_2017. The flip side, attractive to humanists,
+emphasis data as detritus: as the developer Maciej Ceglowski puts it, "a waste product, a bunch of radioactive, toxic sludge that we don’t know how to handle."@ceglowski_haunted_2015
+To think of data in these terms is to enter into one of the culture wars of the 21st century; between
+the technologists who see salvation in data, and the social critics who see its inherent flaws.
+
+You can engage in data analysis from either of these angles. But to understand what "data" really means in a humanistic context, it can be helpful to think
+etymologically.
+"Data" in Latin is simply the plural of the past participle of the verb 'do', to give.
+(Every first-year Latin students memorize the foursome "do-dare-dedi-datum"). Grammatically, it means 
+the same thing as 'given' or 'donation.' Some scholars (@drucker_graphesis_2015)
+have argued that to call data given misrepresents the social process that makes data available to us, the force with which data has been ripped from the world;
+Johanna Drucker, following XXX, argues that we should prefer the term 'capta' instead, to remind us
+that someone has gone out and seized this information from the world. Humanities data
+is always in some sense about *people*; it represents information about people extracted through force,
+flattery, or subterfuge. Data-as-capta is a analytic framework that suggests an important responsibility: the humanist must always
+carry an awareness of the situatedness of the data they work with, and the social relations and power
+that make it possible for it to exist.
+
+If you are on the front lines of a war between the sciences and the humanities, this may be a helpful tack to take.
+But there is another way, too, that is closer to the etymology of 'data' in the university tradition.
+David Rosenberg has shown how the original uses of 'data' in English language books come from theology and mathematics, where
+data means something that your argument rests on.
+Rosenberg writes that this tradition was already evaporating by 1800:  "It had become usual to think of data as the result of an investigation rather than its premise. While this semantic inversion did not produce the twentieth-century meaning of data, it did make it possible." @rosenberg_data_2013.
+
+In this etymology, though, is an insight we should keep. *The gift of data is not from the world to the researcher. It is from the reader to the writer.* To talk of 
+resources, capta, or science misses that fact. What is given not the relationship between the scholar and her sources, but between the writer and her audience.
+"Data," in this sense, means the *premises*
+which the author asks her audience to concede--or to give up--or to take as a given--before the argument begins.
+The system of geometry is built up from four fundamental axioms which we take to be true. Any rhetorical argument 
+proceeeds from some assumptions, that which we 'take for granted.' To do 'data analysis,' in 
+this sense, is to work out the system of implications of some of set of evidence; and it is only useful 
+if anyone will accept your evidence to begin with.
+
+To write about data is to solicit a gift from your readers; the willingness to entertain your premises while you describe them. And depending what field you are in, the way that
+you solicit this gift will be radically different. In the humanities--as in much public writing directed at non-scientists--
+it is not reasonable to expect others to accept your data because it's numerical; you must, instead,
+lead them along to the idea that data has something to say. (A better word than gift might be *concession*.)
+
+To work with data in this sense is not always to perform scientific inference. It is to plumb the relationships
+of the written record and the enumerated record to the people who were reduced to writing and numbers; and it's to engage
+in the careful working out of the implications of that record. One key component of rhetoric that is rarely thought of as data analysis is the *reductio ad absurdam*: the rhetorical
+form that demonstrates that two premises (two givens; two *data*) can not reasonably co-exist, because they produce
+some outcome which is self-evidently ridiculous. This is a claim we'll explore.
+
