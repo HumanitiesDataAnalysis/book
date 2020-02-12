@@ -6,7 +6,9 @@ delete_merged_file: true
 new_session: yes
 rmd_files:
   - "index.Rmd"
-  - "The_Gift.Rmd"
-  - "01-Data_and_Formal_Languages.Rmd"
+  - "Introduction.Rmd"
   - "02-Working_in_R.Rmd"
+  - "01-Data_and_Formal_Languages.Rmd"
   - "01-regex_problems.Rmd"
+  - "03-AnalyzingData.Rmd"
+  - "03-Analyzing_problems.Rmd"

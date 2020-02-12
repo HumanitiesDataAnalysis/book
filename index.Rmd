@@ -17,9 +17,9 @@ description: "Data Analysis using tidy principles for humanists"
 ---
 
 
-# Introduction
+# Preface
 
-This is the text for a course in humanities data analysis; it uses the modern R language
+This is a text for a course in humanities data analysis; it uses the modern R language
 to introduce the major challenges and features that exist for data analysis in the humanities.
 
 This is an text that teaches the practice and principles of data analysis as
@@ -67,15 +67,6 @@ representational layers below. An absolutely fundamental skill for
 data manipulation is the ability to *recast* data into different
 forms; by doing visualization and statistical analysis on just two of
 them, you will see how to shape a variety of forms of information
-
-
-## Transformational thinking
-
-As I have written elsewhere, digital humanists do not need to understand
-algorithms; instead, they need to understand the underlying *transformations* that algorithms 
-execute.@schmidt_digital_2016
-
-## Some references.
 
 There are, at this point, plenty of textbooks out that aim to offer some
 guidelines for humanities students dipping their toe into R. Among the
@@ -134,7 +125,6 @@ the need to create this one in my courses for a few reasons.
    be careful to dwell a bit on the purpose and nature of even
    high-school concepts like logarithms.
 
-## Exercises
 
 Because this is fundamentally a pedagogical text, each chapter
 generally ends with a number of exercises.  The point of these is to
@@ -144,155 +134,11 @@ my classes, these are generally ungraded assignments that students
 must hand in each week; I encourage collaborative work and don't
 penalize dead ends.
 
-It (for now) uses the R language as the primary area of application,
-but I may create a hybrid version of the text that uses the python
+It (for now) uses the R language as the primary area of application.
+I ultimately hope to create a hybrid version of the text that uses the python
 `pandas` package (and `altair` for data visualization) that offer the
 same fundamental approach as does R.
 
 
-
-## Code
-
-This course will have you writing code in the R language. There
-is an extensive debate about whether digital humanists need to learn
-to code. If you have a lot of money to pay other people, you can
-probably get away without it. But the fact of the matter is
-simply that if you want to either *do* data analysis in the
-humanities, coding will often be the only way to realize your personal
-vision; and if you want to *build resources in the humanities* that
-*others* might want analyze, you'll need to know what sophisticated
-users want to do with your tools to make them work for them.
-
-I have no expectation that anyone will come out of this a full-fledged
-developer. By doing some actual scripting, you'll
-come to see that debates over learning to code brush create a false binary; 
-everyone is working 
-We'll be focusing in particular in developing
-skills less in full-fledged "programming," but in "scripting." That
-means instructing a computer in every stage of your work flow; using a
-language rather than a Graphical User Interface (GUI). This takes more time at
-first, but has some major advantages over working in a GUI:
-
-1. Your work is saved and open for inspection.
-2. If you want to discover an error, you can correct it without losing
-   the work done after.
-3. If you want to amend your process (analyze a hundred books instead
-   of ten, for instance) but do the same analysis, you can alter the
-   code only slightly.
-4. You can deploy a wide variety of methods on the same set of data. While
-   the initial overhead to coding is high, when you read about some fancy new method
-   you can often test it quickly *inside* R rather than having to figure out some different piece    of software.
-5. You can deploy the **same** methods on a wide variety of data. The tidy data abstraction 
-   we're working with gives a vocabulary for thinking about documents, resources, and anything
-   that can be counted; by creatively re-combining them, you can interpret new artifacts in
-   interesting ways.
-
-
-## Why R? 
-
-In this class, you will have to do some coding as well as just
-thinking about data analysis in the humanities. If you've never coded
-before, this will be frustrating from time to time. (In fact, if
-you've done a lot of coding before, it will *still* be frustrating!)
-
-We'll be working entirely in the "R" language, developed specifically
-for statistical computing. This has three main advantages for the sort
-of work that historians do:
-
-1. It is easy to download and install, though the program
-   `RStudio`. This makes it easy to do "scripting," rather than true
-   programming, where you can test your results step by step. It also
-   means that R takes the least time to get from raw data to pretty
-   plots of anything this side of Excel. RStudio also offers a number
-   of features that make it easier to explore data interactively.
-
-2. It has a set of packages we'll be using for data analysis. These
-   packages, whose names you will scattered through this text, are
-   `ggplot2`, `tidyr`, `dplyr`, and the like. These are not core R
-   libraries, but they are widely used and offer the most
-   intellectually coherent approach to data analysis and presentation
-   of any computing framework in existence. That means that even if
-   you don't use these particular tools in the future, working with
-   them should help you develop a more coherent way of thinking about
-   what data is from the computational side, and what you as a
-   humanist might be able to do with it. These tools are rooted in a
-   long line of software based on making it easy for individuals to
-   manipulate data: read the optional source on the history of
-   database populism to see more. The ways of thinking you get from
-   this will serve you will in thinking about relational databases,
-   structured data for archives, and a welter of other sources.
-
-3. It is free: both "free as in beer," and "free as in speech," in the
-   mantra of the Free Software Foundation. That means that it--like
-   the rest of the peripheral tools we'll talk about--won't suddenly
-   become inaccessible if you lose a university affiliation.
-
-### Which is the best language for humanities computing?
-
-Different computer languages serve different purposes. If you have taken ever taken
-an introductory computer science course, you might have learned a different language,
-like python, Java, C, or Lisp.
-
-Although computing languages are equivalent in a certain, abstract sense,
-they each channel you towards thinking in particular ways. As I say in chapter 2, 
-computers offer a variety of formal languages for describing things; each 
-of these languages emphasizes a different thing. 
-
-Which of these languages is best? It depends on what you want to
-do. For creating rich, user-oriented experiences, javascript and the open web
-is best. 
-
-What R--especially tidyverse R--does well is encourage you to move
-from thinking about *programming* to thinking about *data.*
-Exploratory data analysis which operates on a particular base class,
-the 'dataframe' or (for short) 'tibble.'  We'll talk about this more in Chapter 3; but
-a dataframe represents a structured collection of data much like an Excel spreadsheet
-or database table.
-This gives a coherent, basic framework for describing
-any data set. The things that you can do with a dataframe 
-
-If you only learn a single language, there's a strong argument that it should
-Python, which is a widespread language that can do anything and frequently
-run quite quickly. If you want to learn to create *code*, Python is a better language.
-
-
-
-But python generally promotes a specific kind of thinking
-about how you can get a problem done that revolves around thinking 
-like a computer.
-
-The closest analogues to these in other languages are less elegant and
-less well thought out. Python has widely used tool called `pandas` for
-analyzing data that is fast, powerful, and effective. But it is also
-more challenging for beginners than it need be. If you Google problems
-you'll be confronted with a variety of different ways to solve a problem.
-Ten years ago, one big advantage of python over R was that it had a small standard library, cleaner syntax, and
-promoted a single way to do things effectively. One of the great ironies of modern data science is that,
-for programming with data, the situation has almost completely reversed;
-pandas give you a bewildering number of different ways to join data frames,
-to access their rows or columns, or to walk through the rows. The `tidyverse`
-does a better job enforcing a particular approach.
-
-If you want to learn *programming*, there's a good argument for learning python.
-Although if you just want to get things done, there's an equally strong case for Javascript: and
-if you really want to understand computers, you should take a month learning to write in Haskell, or Lisp, or C.
-
-
-## The place of pre-packaged software.
-
-One thing you can't do in this course, though, is rely on the
-out-the-box where one tool fits every problem. ArcGIS or QGIS
-may be the best way to make maps, and Gephi the best way to do network
-analysis. But as this is a course in *data analysis,* you should
-think about the fundamental operations of cartography and network
-analysis as simply subsets of a broader field, which is hard to see
-from the confines. All of these things are possible in R, and by seeing
-them as facets of a broader activity, you'll develop transferrable skills 
-and insights.
-
-Also unlike graphical tools, working in a language *saves your workflow*. If you
-make a map with laboriously poisitioned points in ArcGIS, you may have a beautiful final project,
-but you can't reproduce exactly how it happened. In R, though, every step you
-take and every move you make can be preserved. This is called
-*reproducible research*, and it is among the most important
-contributions you can make when working collaboratively.
+This text is intended to be used alongside an R package, installed through github,
+at https://github.com/HumanitiesDataAnalysis/HumanitiesDataAnalysis. 

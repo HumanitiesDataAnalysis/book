@@ -5,9 +5,95 @@ date: "2019-01-17"
 output: pdf_document
 ...
 
-# Working in R
+# Working in a Programming Language
 
-## Some history
+## Different languages and humanities computing.
+
+Different computer languages serve different purposes. If you have taken ever
+taken an introductory computer science course, you might have learned a
+different language, like Python, Java, C, or Lisp.
+
+Although computing languages are equivalent in a certain, abstract sense, they
+each channel you towards thinking in particular ways. As I say in chapter 2,
+computers offer a variety of formal languages for describing things; each of
+these languages emphasizes a different thing.
+
+Which of these languages is best? It depends on what you want to do. For
+creating rich, user-oriented experiences, javascript and the open web is best.
+
+What R--especially tidyverse R--does well is encourage you to move from thinking
+about *programming* to thinking about *data.* Exploratory data analysis which
+operates on a particular base class, the 'dataframe' or (for short) 'tibble.'
+We'll talk about this more in Chapter 3; but a dataframe represents a structured
+collection of data much like an Excel spreadsheet or database table. This gives
+a coherent, basic framework for describing any data set. The things that you can
+do with a dataframe
+
+If you only learn a single language, there's a strong argument that it should
+Python, which is a widespread language that can do anything and frequently run
+quite quickly. If you want to learn to create *code*, Python is a better
+language.
+
+But python generally promotes a specific kind of thinking about how you can get
+a problem done that revolves around thinking like a computer.
+
+The closest analogues to these in other languages are less elegant and less well
+thought out. Python has widely used tool called `pandas` for analyzing data that
+is fast, powerful, and effective. But it is also more challenging for beginners
+than it need be. If you Google problems you'll be confronted with a variety of
+different ways to solve a problem. Ten years ago, one big advantage of python
+over R was that it had a small standard library, cleaner syntax, and promoted a
+single way to do things effectively. One of the great ironies of modern data
+science is that, for programming with data, the situation has almost completely
+reversed; pandas give you a bewildering number of different ways to join data
+frames, to access their rows or columns, or to walk through the rows. The
+`tidyverse` does a better job enforcing a particular approach.
+
+If you want to learn *programming*, there's a good argument for learning python.
+Although if you just want to get things done, there's an equally strong case for
+Javascript: and if you really want to understand computers, you should take a
+month learning to write in Haskell, or Lisp, or C.
+
+## The case for R. 
+
+In this class, you will have to do some coding as well as just
+thinking about data analysis in the humanities. If you've never coded
+before, this will be frustrating from time to time. (In fact, if
+you've done a lot of coding before, it will *still* be frustrating!)
+
+We'll be working entirely in the "R" language, developed specifically
+for statistical computing. This has three main advantages for the sort
+of work that historians do:
+
+1. It is easy to download and install, though the program
+   `RStudio`. This makes it easy to do "scripting," rather than true
+   programming, where you can test your results step by step. It also
+   means that R takes the least time to get from raw data to pretty
+   plots of anything this side of Excel. RStudio also offers a number
+   of features that make it easier to explore data interactively.
+
+2. It has a set of packages--`tidyverse` @wickham_welcome_2019-- 
+   that are especially designed for teaching and introductory exploration. These
+   packages, whose names you will scattered through this text, are
+   `ggplot2`, `tidyr`, `dplyr`, and the like. These are not core R
+   libraries, but they are widely used and offer the most
+   intellectually coherent approach to data analysis and presentation
+   of any computing framework in existence. That means that even if
+   you don't use these particular tools in the future, working with
+   them should help you develop a more coherent way of thinking about
+   what data is from the computational side, and what you as a
+   humanist might be able to do with it. These tools are rooted in a
+   long line of software based on making it easy for individuals to
+   manipulate data: read the optional source on the history of
+   database populism to see more. The ways of thinking you get from
+   this will serve you will in thinking about relational databases,
+   structured data for archives, and a welter of other sources.
+
+3. It is free: both "free as in beer," and "free as in speech," in the
+   mantra of the Free Software Foundation. That means that it--like
+   the rest of the peripheral tools we'll talk about--won't suddenly
+   become inaccessible if you lose a university affiliation.
+
 
 Every computer language is an accretion of cultural history; knowing a little bit about R will help you to understand what's happening in it.
 
@@ -18,6 +104,26 @@ John Chambers developed a language called "S" at Bell Labs with several goals th
 
 In the 1990s, two statisticians in New Zealand, Ross Ihaka and Robert Gentleman, created an open source version of S called "R" that could be freely distributed without worrying about AT&T's old patents. By virtue of being free, that language has slowly displaced Stata and SPSS, the other major statistical computing environments of the 1980s and 1990s.
 
+
+
+## The place of pre-packaged software.
+
+One thing you can't do in this course, though, is rely on the
+out-the-box where one tool fits every problem. ArcGIS or QGIS
+may be the best way to make maps, and Gephi the best way to do network
+analysis. But as this is a course in *data analysis,* you should
+think about the fundamental operations of cartography and network
+analysis as simply subsets of a broader field, which is hard to see
+from the confines. All of these things are possible in R, and by seeing
+them as facets of a broader activity, you'll develop transferrable skills 
+and insights.
+
+Also unlike graphical tools, working in a language *saves your workflow*. If you
+make a map with laboriously poisitioned points in ArcGIS, you may have a beautiful final project,
+but you can't reproduce exactly how it happened. In R, though, every step you
+take and every move you make can be preserved. This is called
+*reproducible research*, and it is among the most important
+contributions you can make when working collaboratively.
 
 ## Packages
 

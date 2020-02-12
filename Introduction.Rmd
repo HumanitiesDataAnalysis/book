@@ -1,0 +1,142 @@
+---
+title: "The Gift of Data"
+output: pdf_document
+---
+
+# Introduction
+
+## The Gift of Data
+
+Humanists make stories, arguments, and narratives. "Data" is a word that,
+nowadays, sounds like it comes from a different vocabulary altogether. Reading
+belongs to the humanities; data analysis belongs to sciences. Data is used for
+proofs, discoveries, and statistical inference. "Humanities Data" isn't quite an
+oxymoron, but it comes close.
+One language of data that insists on treating data as a
+resource. One mantra emphasizes it as a natural resource; data is to be "mined,"
+or data is "the new oil." @anonymous_world_2017. That makes data seem pristine, but a flip side, 
+probably more attractive to
+humanists, emphasizes data instead as detritus: as the developer Maciej @ceglowski_haunted_2015 puts it,
+it is "a waste product, a bunch of radioactive, toxic sludge that we don’t know how to
+handle."^[I got this reference from Zoe LeBlanc.]
+
+You can engage in data analysis from either of these angles. 
+But they both force us to have an opinion about data that is slightly odd,
+aligned with one of the internecine skirmishes in the great culture wars of the 21st century; between the technologists who see
+salvation in data, and the social critics who fear the ways it simplifies the world. Many people
+find it meaningful to identify themselves as "loving data" or being scared of it
+or being suspicious of it. To be on "data's" side is to align with 
+science, and rationalism; to be against it is to seek the remaining blocks of 
+human experience, connection, and unreduced knowledge that are melting like glaciers
+in a technocratic greenhouse. This book is a technical manual to occupying a middle ground, where data exists as part of--not contrary to--the humanities.
+To understand what "data" really means in a humanistic context, it can be helpful to think
+not statstically but etymologically.
+
+"Data" in Latin is simply the plural of the past participle of
+the verb 'do', to give. (Every first-year Latin students memorize the foursome
+"do-dare-dedi-datum"). Grammatically, it means the same thing as 'given' or
+'donation.' Some scholars (@drucker_graphesis_2015) have argued that to call
+data given misrepresents the social process that makes data available to us, the
+force with which data has been ripped from the world; Johanna Drucker, following
+XXX, argues that we should prefer the term 'capta' instead, to remind us that
+someone has gone out and seized this information from the world. Humanities data
+is always in some sense about *people*; it represents information about people
+extracted through force, flattery, or subterfuge. Data-as-capta is a analytic
+framework that suggests an important responsibility: the humanist must always
+carry an awareness of the situatedness of the data they work with, and the
+social relations and power that make it possible for it to exist.
+
+If you are on the front lines of a war between the sciences and the humanities,
+this may be a helpful tack to take. But there is another way, too, that is
+closer to the etymology of 'data' in the university tradition. David Rosenberg
+has shown how the original uses of 'data' in English language books come from
+theology and mathematics, where data means something that your argument rests
+on. Rosenberg writes that this tradition was already evaporating by 1800:  "It
+had become usual to think of data as the result of an investigation rather than
+its premise. While this semantic inversion did not produce the twentieth-century
+meaning of data, it did make it possible." @rosenberg_data_2013.
+
+In this etymology, though, is an insight we should keep. *The gift of data is
+not from the world to the researcher. It is from the reader to the writer.* To
+talk of resources, capta, or science misses that fact. What is given not the
+relationship between the scholar and her sources, but between the writer and her
+audience. "Data," in this sense, means the *premises* which the author asks her
+audience to concede--or to give up--or to take as a given--before the argument
+begins. The system of geometry is built up from four fundamental axioms which we
+take to be true. Any rhetorical argument proceeeds from some assumptions, that
+which we 'take for granted.' To do 'data analysis,' in this sense, is to work
+out the system of implications of some of set of evidence; and it is only useful
+if anyone will accept your evidence to begin with.
+
+To write about data is to solicit a gift from your readers; the willingness to
+entertain your premises while you describe them. And depending what field you
+are in, the way that you solicit this gift will be radically different. In the
+humanities--as in much public writing directed at non-scientists-- it is not
+reasonable to expect others to accept your data because it's numerical; you
+must, instead, lead them along to the idea that data has something to say. (A
+better word than gift might be *concession*.)
+
+To work with data in this sense is not always to perform scientific inference.
+It is to plumb the relationships of the written record and the enumerated record
+to the people who were reduced to writing and numbers; and it's to engage in the
+careful working out of the implications of that record. One key component of
+rhetoric that is rarely thought of as data analysis is the *reductio ad
+absurdam*: the rhetorical form that demonstrates that two premises (two givens;
+two *data*) can not reasonably co-exist, because they produce some outcome which
+is self-evidently ridiculous. This is a claim we'll explore.
+
+
+## Transformational thinking
+
+As I have written elsewhere, digital humanists do not need to understand
+algorithms; instead, they need to understand the underlying *transformations* that algorithms 
+execute.@schmidt_digital_2016 These transformations describe the sorts of things you can do 
+to a dataset. Many of them you probably already know in principle: sorting a list, taking an average, making a line chart.
+For those, this text simply aims to give you a way to command a computer to execute
+those tasks in a language that's flexible to help you think about stringing multiple simple
+transformations together.
+
+Other transformations are more exotic, but have showed their worth in either decades of research
+in the digital humanities or in intense exploration inside computer science over the last decade.
+I have tried to be judicious in wat I present from this sphere, but there is good
+reason to understand things like the vector space model underlying modern machine 
+learning, the concept of the 'bootstrap' as a general purpose statistical test,
+or the transformations involved in the fundamental information-theoretic metric of pointwise mutual information.
+
+## Code
+
+This course will have you writing code in the R language. There
+is an extensive debate about whether digital humanists need to learn
+to code. If you have a lot of money to pay other people, you can
+probably get away without it. But the fact of the matter is
+simply that if you want to either *do* data analysis in the
+humanities, coding will often be the only way to realize your personal
+vision; and if you want to *build resources in the humanities* that
+*others* might want analyze, you'll need to know what sophisticated
+users want to do with your tools to make them work for them.
+
+I have no expectation that anyone will come out of this a full-fledged
+developer. By doing some actual scripting, you'll
+come to see that debates over learning to code brush create a false binary; 
+everyone is working 
+We'll be focusing in particular in developing
+skills less in full-fledged "programming," but in "scripting." That
+means instructing a computer in every stage of your work flow; using a
+language rather than a Graphical User Interface (GUI). This takes more time at first, but has some major advantages over working in a GUI:
+
+1.  Your work is saved and open for inspection.
+2.  If you want to discover an error, you can correct it without losing the work
+    done after.
+3.  If you want to amend your process (analyze a hundred books instead of ten,
+    for instance) but do the same analysis, you can alter the code only
+    slightly.
+4.  You can deploy a wide variety of methods on the same set of data. While the
+    initial overhead to coding is high, when you read about some fancy new
+    method you can often test it quickly *inside* R rather than having to figure
+    out some different piece of software.
+5.  You can deploy the **same** methods on a wide variety of data. The tidy data
+    abstraction we're working with gives a vocabulary for thinking about
+    documents, resources, and anything that can be counted; by creatively
+    re-combining them, you can interpret new artifacts in interesting ways.
+
+
