@@ -1,0 +1,114 @@
+---
+title: "Working in R"
+author: "Ben Schmidt"
+date: "2019-01-17"
+output: pdf_document
+...
+
+# Working in R
+
+## Some history
+
+Every computer language is an accretion of cultural history; knowing a little bit about R will help you to understand what's happening in it.
+
+R, the programming language, dates back to the 1970s. During the heyday of Bell Labs in the 1970s,
+researchers built a variety of tools for working with different computer systems, including the language `C` that has influenœced most low-level program design since, and the operating system `Unix` that provides the foundation for many modern computing systems from Apple laptops to Amazon servers to Android phones.
+
+John Chambers developed a language called "S" at Bell Labs with several goals that continue to influence the language's design. One was to provide a way to use, in a more human notation, the blazingly fast linear algebra routines that undergird all sorts of work in math, statistics, and visualization. Another was to facilitate more sophisticated, exploratory data visualization. 
+
+In the 1990s, two statisticians in New Zealand, Ross Ihaka and Robert Gentleman, created an open source version of S called "R" that could be freely distributed without worrying about AT&T's old patents. By virtue of being free, that language has slowly displaced Stata and SPSS, the other major statistical computing environments of the 1980s and 1990s.
+
+
+## Packages
+
+R is a modular piece of software. The base language allows you to apply most standard statistical methods from the 1990s, but in general the power of the language comes from extensions that others have worked with. This means that even after installing R, you'll frequently have to install additional "packages." The ability to do so is contained inside R itself; you can think of packages as living **inside** your local copy of R.
+
+There is also one program worth installing that lives outside, called "RStudio." It provides you with an environment to work in. Some features it provides that are especially useful for students are:
+
+1. The ability to see loaded data on the right of the screen, and to click to view it.
+2. An interface that keeps plots alongside code.
+3. Tools for automatically checking your code, such as tab-completion that can often guess what you're trying 
+   to type after a few letters.
+
+But the most important things R Studio does for you are to make it easier to work in **projects** and to use  **literate programming**.
+
+### Projects
+
+Projects in RStudio are basically folders devoted to a specific task. What they do is enforce a discipline on you that can be hard to stick to otherwise, which is that you should always keep all data related to a specific data analysis project in the same place unless you have a very good reason not to. I would recommend having a few different projects for this class. One should be called "Problem Sets;" you can use the `download_problem_sets()` function in the course package to fill it with sets, and then use the `Files` tab in RStudio to open the latest ones. Others will focus on more specific tasks.
+
+Projects also automatically save all of your data from session to session so that you can quit R and have all your data there when you open it back up again a week later. This can be useful, but it can also be something 
+
+### Literate Programming
+
+R is designed to be **interactive**. There is a prompt (marked 'console') at the bottom of your screen into which you can always enter any expression. While some langauges expect you to write a program in a text file, in R it is very normal to work back and forth with your data, entering one command at a time.
+
+While you *can* type directly into the prompt, any good data analysis should use a file so you can correct
+and save your work. R makes heavy use of a paradigm called "literate programming," in which code and full text are intermixed into so-called 'notebooks.'
+
+These are files that end with the suffix '.Rmd', which stands for "R Markdown." Markdown is a simple way of typing text that allows for minimal amounts of formatting (such as italics, numbered lists, and so forth) using a style derived from the way people often type fulltext e-mails. The [standard](https://commonmark.org/)
+represents a word in \*\*bold\*\* with two asterisks, a block quotation with with each line prefaced by a `>`, and so on.
+
+Markdown allows for "code blocks" surrounded by three backticks. In R markdown documents, everything is 
+text unless you explicitly mark it as code; but when you do, there are a variety of ways to run it.
+
+```
+\`\`\`{R}
+
+analyze(data)
+
+\`\`\`
+```
+
+### The **`Tidyverse`**
+
+One set of packages bears particular emphasis. Hadley Wickham, who was for a time a statistics professor at Rice University, and more recently has become the chief data scientist at RStudio. The `tidyverse` is a set of packages that he oversees that provides a different syntax for R.
+
+### Installing from CRAN
+
+R packages can come from two sources. The first, easier one is internal to the R ecosystem and called "CRAN" (The 'Comprehensive R Archive Network'). 
+CRAN sets the highest bar on what packages are available.
+
+The function **`install.packages`** or the "packages" pane in RStudio.
+
+```{r eval=FALSE}
+
+install.packages("tidyverse")
+install.packages("remotes")
+
+```
+
+### Installing from github
+
+But it can be a great deal of work to make a package fit into CRAN--the maintainers are famously fastidious about certain standards that can be included. (The digital humanist Matt Lincoln has a blog post about how an obscure feature of certain operating systems nearly broke not just his clipoard package, but all sorts of other packages that depend on it. @lincoln_little_2019) Frequently you'll want to install packages from outside sources; the most common is Github, a website owned by Microsoft that distributes code using the open source 'git' standard.
+
+
+### The course package
+
+This course itself uses an R package to manage information. You can install it using the following lines of code.
+
+The second line will also *reinstall* the package, which we'll probably do periodically in the semester.
+
+```{r eval = FALSE}
+if (!require(remotes) install.packages("remotes"))
+remotes::install_github("HumanitiesDataAnalysis/HumanitiesDataAnalysis")
+```
+Once installed, you can also update by typing `update_HDA()` at the R prompt. 
+
+The course package contains four things:
+
+1. Sample data sets we'll be working with
+2. Code to make it easier to work with the class by, for example, downloading problems sets to your computer.
+3. Code the streamline approaches that we've already learned that aren't easily expressed in another packages.
+4. A list of 'dependencies' that will automatically install *other* packages you need.
+
+## Creating your first project
+
+Getting started is the hardest thing, because it requires understanding--to some degree--this entire software 'stack.' Here's what you should do once RStudio is running.
+
+1. Type `remotes::install_github("HumanitiesDataAnalysis/HumanitiesDataAnalysis")` into the R prompt inside RStudio.
+2. Type `library(HumanitiesDataAnalysis)` to actually load the package.
+3. Create a new project for problem sets in a folder on your computer.
+4. Type `download_problem_sets()` to download the sets.
+5. Start editing the code in the first problem set and run it using the green arrow buttons.
+
+

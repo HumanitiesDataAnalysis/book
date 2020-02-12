@@ -9,11 +9,11 @@ output:
   bookdown::pdf_document:
     df_print: kable
 documentclass: book
-bibliography: [/Users/bschmidt/Dropbox/MyLibrary.bib]
+bibliography: [works_cited.bib]
 biblio-style: apalike
 link-citations: yes
 github-repo: HumanitiesDataAnalysis/text
-description: "Data Analysis using tidy principles for humanities students."
+description: "Data Analysis using tidy principles for humanists"
 ---
 
 
@@ -73,7 +73,7 @@ them, you will see how to shape a variety of forms of information
 
 As I have written elsewhere, digital humanists do not need to understand
 algorithms; instead, they need to understand the underlying *transformations* that algorithms 
-execute.@schmidt_do_2017
+execute.@schmidt_digital_2016
 
 ## Some references.
 

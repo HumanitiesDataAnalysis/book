@@ -6,7 +6,7 @@ bookdown::gitbook:
         <li><a href="./">Humanities Data Analysis in Modern R</a></li>
       after: |
         <li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
-    edit: https://github.com/HumanitiesDataAnalysis/HDA19/edit/master/HDAbook/%s
+    edit: https://github.com/HumanitiesDataAnalysis/book/edit/master/book/%s
     download: ["pdf", "epub"]
   df_print: paged
 

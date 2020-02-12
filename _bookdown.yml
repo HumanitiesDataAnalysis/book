@@ -4,4 +4,9 @@ language:
     chapter_name: "Chapter "
 delete_merged_file: true
 new_session: yes
-rmd_files: ["index.Rmd", "The Gift.Rmd", "01-Data and Formal Languages.Rmd", "01-regex_problems.Rmd", "02-Working in R.Rmd"]
+rmd_files:
+  - "index.Rmd"
+  - "The_Gift.Rmd"
+  - "01-Data_and_Formal_Languages.Rmd"
+  - "02-Working_in_R.Rmd"
+  - "01-regex_problems.Rmd"
