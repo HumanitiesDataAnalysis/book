@@ -52,7 +52,6 @@ In converting messy dates, you'll frequently have to use regular expressions.
 When creating data yourself, you should use ISO 8601, which uses a "year-month-day" format. That is: Europeans and Americans differ about whether
 Pearl Harbor happened on `12/7/41` or `7/12/41`; the only sound response if you are creating data is to use `1945-12-07`.
 
-
 In the example data in the excersises, you'll see an example of this in the data from the New Bedford Whaling Museum.
 
 ## Data cleaning in R
@@ -89,7 +88,7 @@ You will see some alarming text in red. You can read it or try to understand; bu
 The first part of our cleaning is just to work around this.
 
 ```{r}
-read_csv("http://www.whalingmuseum.org/online_exhibits/crewlist/crewlist.csv", guess_max = 1000000)
+crews = read_csv("http://www.whalingmuseum.org/online_exhibits/crewlist/crewlist.csv", guess_max = 1000000)
 ```
 
 The first thing to do is simply look at. Going to the "Environment" pane in the upper right-hand corner, you can see what's in here.
@@ -118,6 +117,7 @@ The first thing to do with a new data source is run `summary`, which figures out
 ```{r SecondSummary}
 
 summary(crews)
+
 ```
 
 
@@ -133,7 +133,13 @@ If you don't have Excel (or LibreOffice, the free version), you can read in Exce
 
 There are some obvious problems with the "crews" data we need to fix for analysis.
 
-For example: 'year' should be a number, but is listed as 'character'.
+For example. For example, in the raw version of this dataset:
+
+1. 'Height' is represented as a string like `5' 2 1/2"`, with feet and inches broken out;
+2. 'Age' has been read as a string, not a number;
+3. 'Date' has been read as a string, so we can't plot--for example--years.
+
+#### An example: cleaning years, and assignment.
 
 We want to extract the years.  
 
@@ -141,116 +147,77 @@ We want to extract the years.
 
 Note that the date doesn't follow a standard form. We're going to use **regular expressions** again to clean it up. Notice the steps in the chain here. We're creating a new column called "year." Then, we feed the output into the function `str_replace`, which lets us use a regular expression.
  
- **Remember the function `str_replace`:** it is among the most important tools for data cleaning in R you will encounter. It lets you use the full power of regular expressions for find-replace operations. This regular expression is complicated--you may have to refer back to your sheet to see what's going on. Note in particular that the parenthesis are performing a **grouping** operation. `gsub` is a substitution function, so you have to tell it what to replace it with. In this case, the escaped phrase `\\1` tells R to substitute with *the first matched group*. (That's what `\\1` means: `\\2` will match the second matched group, and so forth.)
+ **Remember the function `str_replace`:** it is among the most important tools for data cleaning in R you will encounter. It lets you use the full power of regular expressions for find-replace operations. This regular expression is complicated--you may have to refer back to your sheet to see what's going on. Note in particular that the parenthesis are performing a **grouping** operation. `str_replace` is a substitution function, so you have to tell it what to replace it with. In this case, the escaped phrase `\\1` tells R to substitute with *the first matched group*. (That's what `\\1` means: `\\2` will match the second matched group, and so forth.)
 
-One feature of working with regular expressions in R is that you have to supply two backslash characters in front of a special character instead of one.
- 
 So: suppose we want to pull 'year' out *as a number*.
 
 The tidyverse has a function `mutate` that changes a dataframe: it either adds a new column, or changes an existing one.
 
 This gets a little complicated, so let's break it down.
 
-*pull* extracts a column so you can look at it.
+*pull* extracts a column so you can look at it more closely. Let's do that with our `ApproximateDeparture` column.
 
-`str_replace`
+```{r}
+crews %>% pull(ApproximateDeparture) %>% head(10)
+```
+
+Let's build up a tiny program that extracts the year from this. The first step is to
+use regular expressions to get to just the year part of the expression. A simple way
+to do that here is to use the `.*` regex operator to replace everything up to and including
+a slash with nothing (the empty string, "").
 
 ```{r}
 
-attach(crews)
+crews %>% pull(ApproximateDeparture)  %>% str_replace(".*/", "") %>% head(10)
 
-Height %>% str_replace(".*([0-9]{4}).*", "\\1")
 ```
 
-The changes aren't there: we can update the frame by using `=` to reassign.
+We're not done yet, though, because these are strings and years should be integers.
+The function `as.numeric` does this for us. (There's a corresponding function, `as.character`, that
+can turn a number into a string.)
 
-We also want to make it a number, not a string.
-
-That's done using a special function: `as.numeric`. We can add it to the chain.
 ```{r}
 
-departure %>%
-  str_replace(".*([0-9]{4}).*", "\\1") %>%
-  as.numeric() %>%
-  summary()
+crews %>% pull(ApproximateDeparture) %>% str_replace(".*/", "") %>% as.numeric %>% head(10) 
+
 ```
+
+Success! But while this program runs, it doesn't actually change our original frame.
+To do so, we need to do *assignment.*
 
 Finally, we add it to the main file. Now there's a new column called year.
 
 ```{r}
-crews <- crews %>% mutate(year = departure)
-```
 
-### Exercises: reading and cleaning data in R
-
-
-
-1. Is the New Bedford Crewlist data "tidy" according to Hadley Wickham's standards?
-
-
-
-2. I've pasted below the code that fixes the date field using regular expressions. (We'll get more into just what it does over the next weeks: but an important part of coding is occasionally re-using code that you *don't* completely understand.) Add two more groups using parenthesis and more numbers: make it turn the date into the standard "1865-11-7" format.
-
-
-``` {r}
-library(tidyverse)
-crews %>% mutate(year = ApproximateDeparture %>% str_replace(".*([0-9]{4}).*", "\\1"))
-```
-
-3. Located in this folder, there is another file called "shiptypes.csv". It shows, the number of vessels in the database by year and ship type. It's in the folder "data": the way you represent folder names is by prefixing with a slash (or maybe a backslash on Windows.) It will probably, then be located at `data/shiptypes.csv`. Read it in, and look at it.
-
-Fix the following code to read it in, and look at it.
-
-``` {r}
-
-shiptypes <- read_csv("../data/shiptypes.csv")
-
-shiptypes %>% count(Rig)
-```
-
-
-5. That data will reveal something obviously wrong with the crewlist data. Standardize the ship names in this set using regular expressions.
-
-``` {r}
+crews <- crews %>% mutate(
+  year = ApproximateDeparture %>% str_replace(".*/", "") %>% as.numeric
+)
 
 ```
 
+## Cleaning
 
-# Reformatting information: the `tidyr` package
+In practice, you often do not need to get so far into the nitty-gritty. I do not know of an R function
+that would translate feet and inches, but for age and date, we can do this all much more simply.
 
-Hadley Wickham's articles on "tidy" data lay out an extremely useful way to think about data.
+To turn a string into a number is quite simple; it just takes the function `as.numeric`,
+which converts between types. Dates are more complicated. A date **is** a base data type in R,
+just like strings and numbers, but there are many different ways of specifying them.
+So we use the function `parse_date` with a special string that describes the format:
+month-day-year.
 
-
-## Exercises: tidying data
-
-1. Is the data you read in under shiptypes `tidy`?
-
-2. Using the `gather` and `spread` functions from the `tidyr` package, create a new data.frame that has rows corresponding to ship types and columns corresponding to years. (That is, the exact inverse of the data.frame you saw before.)
-
-``` {r}
-
-```
-
-3. There's another file in the `data` directory called CESTACityData.csv. It was graciously provided by the [Center for Spatial and Textual Analysis at Stanford](https://cesta.stanford.edu/). Read it in. We'll be working with this data set more next week.
-
-``` {r}
-a <- CESTA
-```
+This is another formal language, of course, a tiny little one that specifies data formats.
+"%m/%d/%Y" means month-day-year (12/7/1945); "%Y-%m-%d" means (1945-12-7). Are you supposed to memorize
+all these letters? Of course not. Instead, you just need to know that there's a function for date parsing,
+and then use the 'help' documentation in R studio to read about how a particular conversion function works.
 
 
-4. This data is clearly not tidy. (Why not?) Use `gather` to turn it into tidy data, and save it as a data.frame called "tidied". (Hint: the final frame will have a column called "year:" You will have to use gsub to remove Xs from the year name.)
+```{r}
 
-``` {r}
+crews <- crews %>% mutate(
+  Age = Age %>% as.numeric,
+  date = ApproximateDeparture %>% parse_date("%m/%d/%Y")
+)
 
 ```
 
-5. Use the `?` operator to read about the function `write_csv`. Save the result to disk: we'll be exploring it more next week.
-
-``` {r}
-
-```
-
-
-### Tidy data for network visualizations.
-
-If you are interested in network visualizations and have data like So and Long's, come to me: we'll talk about how to use tidyr to reshape some data for network analysis to be exported into a program like Gephi.

@@ -5,6 +5,11 @@ date: "2019-01-29"
 output: pdf_document
 ---
 
+```{r warning=FALSE, echo=FALSE}
+
+library("tidyverse")
+library("HumanitiesDataAnalysis")
+```
 # Counting things
 
 ## The power of counting
@@ -33,8 +38,14 @@ I'll be introducing these statements one by one, but first let me describe the b
 We're making heavy, heavy use of a new feature of R in this class: the so-called "pipe" operator, `%>%`. (The name of the package containing it is "magrittr - Ceci n'est pas un pipe," but for our purposes it's fine to call it a pipe.)
 
 The idea of the pipe is to represent each transformation of data you make as a chain. 
+Remember how we mentioned in the data types chapter that multiplication and addition operators
+are a different sort of notation from the rest of R? Although it's highly unnatural, a much
+more computer-friendly method would be to use functions called `add`, `divide_by`, and so on.
+These *are* available in the maggritr package.
 If you wanted to define a process where you took a number, added 2, then multiplied by 6, 
 and finally divided by ten. You could express that as a set of functions where you assign them along the way. (The `<-` operator below assigns values; we will not see it again this chapter.)
+
+
 
 ``` {r}
 library(magrittr)
@@ -54,7 +65,8 @@ But you could also nest them inside each other. This requires you to read the fu
 divide_by(add(multiply_by(1, 6), 2), 10)
 ```
 
-With `magrittr`, you can use pipes to read the operation simply from left to right.
+Using pipes, you can read the operation simply from left to right. The idea here is to think of data as _flowing_ through a set of operations. First
+you take the thing and multiply it; next you take the same thing and divide it.
 
 ``` {r}
 1 %>%
@@ -63,20 +75,16 @@ With `magrittr`, you can use pipes to read the operation simply from left to rig
   divide_by(10)
 ```
 
+
 These expressions can get quite long. Formatting your code will make it substantially more readable.
 There are a few guidelines for this:
-Ï
+
 1. Each line must end with a pipe-forward operator: if R hits a linebreak with a syntactically complete element, it will print the results.
 2. If you pipe an operation to a function that has no arguments, you may omit the parentheses after the function. (Don't worry about what this means yet if it doesn't make sense.)
 
 So you might prefer to write the above in the following form. (Note that RStudio will automatically indent your code for you.)
 
-``` {r}
-1 %>%
-  multiply_by(6) %>%
-  add(2) %>%
-  divide_by(10)
-```
+
 ## Real Data
 
 Let's look at some real data. You have already downloaded, with the materials, a dataset called 'crews.' You can open it like this:
@@ -89,13 +97,6 @@ The first thing to do is simply look at. Going to the "Environment" pane in the 
 
 Where did this data come from? Did they do a good job transcribing? Here's [an example of the original source](http://blogs.archives.gov/prologue/wp-content/uploads/acushnet-crew-list.jpg)
 
-
-### 
-
-```{r}
-
-
-```
 
 #### Filtering
 
@@ -133,28 +134,28 @@ crews %>% filter(Age > 65)
 
 ###### The `%in%` operator
 
-Almost as useful for humanities computing as `==` is the special operator `%in%`. `==` tests if two values are the same: `%in%` tests if the left hand sign is *part of* the right hand side. So for example, see the results of the following operations.
-
-The first is a *vectorized* operation: it gives you the result for each of the functions.
-
-The second gives a single true/false values.
-
-``` {r The %in% function}
-"New York" == c("Boston", "New York", "Philadelphia")
-```
-
+Almost as useful for humanities computing as `==` is the special operator `%in%`. `==` tests if two values are the same: `%in%` tests if the left hand sign is *part of* the right hand side. This expression tells you whether, for example, "New York" is in a list of cities.
 
 ```{r}
 "New York" %in% c("Boston", "New York", "Philadelphia")
 ```
 
-In the `crews` dataset, we could search to find, for example, any combination of names of interest.
+On a longer list, this can be useful to find any combination of names of interest. Here, for example, we can check if anyone on a list might be a Beatle.
 
 ``` {r %in% with filter}
 
 crews %>%
   filter(LastName %in% c("McCartney", "Lennon", "Harrison", "Starr"))
 ```
+
+Compare that to a regular-expression based appraoch, below. What's the difference?
+
+``` {r regex with filter}
+
+crews %>%
+  filter(LastName %>% str_detect("McCartney|Lennon|Harrison|Starr"))
+```
+
 
 We can also count the occurrences of each of these last names to see which is most common.
 
@@ -164,7 +165,7 @@ crews %>%
   count(LastName)
 ```
 
-In practice, `%in%` is most often useful for checking very large lists you already have loaded in.  
+You'll notice a similarity between %in% and %>% in the way they use percentage signs.
 
 #### Arranging
 
@@ -187,6 +188,7 @@ If you want to sort in descending order, to see the oldest, you can use the `dpl
 crews %>%
   arrange(Age %>% desc()) %>%
   head()
+
 ```
 
 #### Summarizing

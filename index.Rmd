@@ -9,8 +9,8 @@ output:
   bookdown::pdf_document:
     df_print: kable
 documentclass: book
-bibliography: [works_cited.bib]
-biblio-style: apalike
+bibliography: [workscited.bib]
+biblio-style: chicago
 link-citations: yes
 github-repo: HumanitiesDataAnalysis/text
 description: "Data Analysis using tidy principles for humanists"
