@@ -94,22 +94,23 @@ chunked_SOTU <- allSOTUs %>%
 word_statistics <- chunked_SOTU %>%
   group_by(total_documents, word) %>%
   summarize(documents = n(), n = sum(n)) %>%
-  mutate(document_share = documents/total_documents, word_share = n/sum(n)) %>%
+  mutate(document_share = documents / total_documents, word_share = n / sum(n)) %>%
   arrange(-n) %>%
-  mutate(expected_docs = (1 - (1 - 1/total_documents)^n))
+  mutate(expected_docs = (1 - (1 - 1 / total_documents)^n))
 ```
 
 ```{r}
 library(ggrepel)
-?scales::percent
-word_statistics %>% ungroup %>% 
+
+word_statistics %>%
+  ungroup() %>%
   ggplot() + aes(x = n, y = document_share, label = word) +
   geom_point(alpha = 0.2) +
   scale_y_log10("Percent of documents", labels = scales::percent) +
-  scale_x_log10("Total Occurrences", labels = scales::comma, breaks = 10^(0:5)) + 
-  geom_line(aes(y=expected_docs), color='red', lwd=2, alpha = .33) + 
+  scale_x_log10("Total Occurrences", labels = scales::comma, breaks = 10^(0:5)) +
+  geom_line(aes(y = expected_docs), color = "red", lwd = 2, alpha = .33) +
   geom_label_repel(data = word_statistics %>% filter(word %in% c("gold", "the", "becoming", "soviet", "america", "congress", "these", "every", "iraq")), fill = "#FFFFFFAA") +
-  labs(title = "Word Frequency and document share", subtitle = "The more common a word is, the more documents it appears in...\n but some words are in just a few documents") 
+  labs(title = "Word Frequency and document share", subtitle = "The more common a word is, the more documents it appears in...\n but some words are in just a few documents")
 ```
 
 Rather than plotting on a log scale, TF-IDF uses a statistic called the 'inverse document share.' The alteration to the plot
@@ -121,34 +122,33 @@ will be zero. That means that extremely common phrases (in this set, those much 
 
 ```{r}
 word_statistics %>%
-  mutate(IDF = log(total_documents/documents)) %>%
-  ggplot() + 
-  geom_point(aes(x = n, y = IDF)) + 
-  scale_x_log10() + labs(title="TF-IDF weights are inverse of log-scaled documents percentages")
+  mutate(IDF = log(total_documents / documents)) %>%
+  ggplot() +
+  geom_point(aes(x = n, y = IDF)) +
+  scale_x_log10() + labs(title = "TF-IDF weights are inverse of log-scaled documents percentages")
 ```
 
 
 ```{r}
-tf_idf = chunked_SOTU %>% 
-  group_by(filename, chunk, word) %>% 
+tf_idf <- chunked_SOTU %>%
+  group_by(filename, chunk, word) %>%
   mutate(documents = n()) %>%
   group_by(filename, chunk) %>%
   mutate(total_documents = n_groups(.)) %>%
-  mutate(IDF = log(total_documents/documents)) %>%
-  mutate(tf = n/sum(n)) %>%
+  mutate(IDF = log(total_documents / documents)) %>%
+  mutate(tf = n / sum(n)) %>%
   mutate(tf_idf = tf * IDF)
 
 
-tf_idf %>% 
+tf_idf %>%
   filter(sum(n) > 1500) %>%
-  filter(word %in% c("iraq", "iraqis", "america", "americans")) %>% 
+  filter(word %in% c("iraq", "iraqis", "america", "americans")) %>%
   summarize(score = sum(tf_idf)) %>%
-  arrange(-score) %>% 
+  arrange(-score) %>%
   head(3) %>%
-  inner_join(allSOTUs) %>% 
+  inner_join(allSOTUs) %>%
   slice(1:100) %>%
-  summarize(score = score[1], text = str_c(word, collapse=' '))# %>% pull(text)
-
+  summarize(score = score[1], text = str_c(word, collapse = " ")) # %>% pull(text)
 ```
 
 
@@ -247,7 +247,7 @@ d %>%
   add_count(wt = n, name = "total_count") %>%
   mutate(expected = skin_count / total_count * hair_count / total_count * total_count) %>%
   filter(skin_count > 100, hair_count > 100) %>%
-  mutate(ratio = ifelse(n == 0, 1, n) / expected) %>% 
+  mutate(ratio = ifelse(n == 0, 1, n) / expected) %>%
   arrange(-expected) %>%
   ggplot() +
   geom_tile(aes(x = Skin, y = Hair, fill = log(ratio))) + scale_fill_viridis_c() + labs(
@@ -266,7 +266,7 @@ Some of these are obvious ('per cent.') But others are a little more interesting
 
 ```{r cache=TRUE}
 bigrams <- allSOTUs %>%
-  ungroup %>%
+  ungroup() %>%
   mutate(word2 = lead(word, 1)) %>%
   # Count the occurrences of each bigram
   count(word, word2) %>%
@@ -279,7 +279,9 @@ bigrams <- allSOTUs %>%
   mutate(ratio = n / expected, pmi = log(ratio)) %>%
   arrange(-ratio)
 
-bigrams %>% select(word, word2, pmi) %>% head(10)
+bigrams %>%
+  select(word, word2, pmi) %>%
+  head(10)
 ```
 
 
@@ -301,28 +303,29 @@ for a word occurring in a corpus, you also calculate the observed-expected ratio
 
 ```{r}
 counts <- allSOTUs %>%
-  ungroup %>%
+  ungroup() %>%
   mutate(word2 = lead(word, 1)) %>%
   # Count the occurrences of each bigram
   count(word, word2) %>%
-  group_by(word) %>% summarize_pmi(word2, n, all_fields = TRUE)
+  group_by(word) %>%
+  summarize_pmi(word2, n, all_fields = TRUE)
 
 pmid <- counts %>%
-  summarize_pmi(word, n, all_fields = TRUE) %>% 
+  summarize_pmi(word, n, all_fields = TRUE) %>%
   inner_join(counts)
 
-counts %>% 
+counts %>%
   group_by(word2) %>%
   mutate(
-    global_occurrences = sum(.count) - .count, 
+    global_occurrences = sum(.count) - .count,
     global_expected = ((sum(.doc_total) - .doc_total) * .word_share),
-    pmi_for_everything_else = global_occurrences * log(global_occurrences/global_expected), 
-    scaled  = .count * .pmi, 
-    dunning = 2*(pmi_for_everything_else + scaled),
-    signed_dunning = dunning * ifelse(.pmi < 0, -1, 1 )) -> dun_test
+    pmi_for_everything_else = global_occurrences * log(global_occurrences / global_expected),
+    scaled = .count * .pmi,
+    dunning = 2 * (pmi_for_everything_else + scaled),
+    signed_dunning = dunning * ifelse(.pmi < 0, -1, 1)
+  ) -> dun_test
 
 dun_test %>% arrange(pmi2)
-  
 ```
 
 ```{r}
@@ -343,7 +346,7 @@ dunning_scores %>%
   ggplot() +
   geom_bar(aes(x = reorder(word, dunning_llr), y = dunning_llr), stat = "identity") +
   coord_flip() +
-  facet_wrap(~president, scales = "free_y") + 
+  facet_wrap(~president, scales = "free_y") +
   labs("The statistically most distinctive words in each modern president's state of the Union addresses.")
 ```
 
@@ -383,16 +386,17 @@ dunning_matrix <- allSOTUs %>%
   group_by(president) %>%
   summarize_llr(sentiment, count) %>%
   select(president, sentiment, dunning_llr)
-  
-pmi_matrix %>% inner_join(dunning_matrix) %>%
+
+pmi_matrix %>%
+  inner_join(dunning_matrix) %>%
   gather(metric, value, pmi, dunning_llr) %>%
   group_by(metric) %>%
   mutate(scaled = scale(value)) %>%
-  ggplot() + 
-  geom_tile(aes(x = president, y = sentiment, fill = scaled)) + 
-  scale_fill_viridis_c() + 
-  coord_flip() + 
-  facet_wrap(~metric, ncol=1) + 
+  ggplot() +
+  geom_tile(aes(x = president, y = sentiment, fill = scaled)) +
+  scale_fill_viridis_c() +
+  coord_flip() +
+  facet_wrap(~metric, ncol = 1) +
   labs("")
 ```
 
@@ -455,10 +459,13 @@ authorProbs <- fedWords %>%
   # For this abstraction, the document is the *author*.
   group_by(author, title) %>%
   count(word) %>%
-  mutate(probability = n / sum(n)) 
+  mutate(probability = n / sum(n))
 
-authorProbs %>% filter(author %in% c("HAMILTON", "MADISON")) %>% group_by(author) %>% summarize_llr(word, n) %>% arrange(-abs(dunning_llr))
-
+authorProbs %>%
+  filter(author %in% c("HAMILTON", "MADISON")) %>%
+  group_by(author) %>%
+  summarize_llr(word, n) %>%
+  arrange(-abs(dunning_llr))
 ```
 
 ## Naive Bayes
@@ -493,13 +500,13 @@ First we'll create a term document matrix.
 
 ```{r logisticRegressionFederalist}
 
-fedMatrix = authorProbs %>%
-  spread(word, probability, fill = 0) %>% ungroup %>% 
-  mutate(title = title %>% str_extract("[0-9]+") %>% as.numeric)
+fedMatrix <- authorProbs %>%
+  spread(word, probability, fill = 0) %>%
+  ungroup() %>%
+  mutate(title = title %>% str_extract("[0-9]+") %>% as.numeric())
 
-known = fedMatrix %>% filter(author %in% c("HAMILTON", "MADISON"))
-unknown = fedMatrix %>% filter(author == "DISPUTED")
-
+known <- fedMatrix %>% filter(author %in% c("HAMILTON", "MADISON"))
+unknown <- fedMatrix %>% filter(author == "DISPUTED")
 ```
 
 Then we run the model. In R, logistic regression 
@@ -523,15 +530,13 @@ the humanities.
 
 ```{r}
 
-authorProbs 
-
+authorProbs
 ```
 
 ```{r}
 
-model = glm(author == "HAMILTON" ~ there + by + on, data = known, family = "binomial")
-model %>% summary
-
+model <- glm(author == "HAMILTON" ~ there + by + on, data = known, family = "binomial")
+model %>% summary()
 ```
 
 More relevant is how *powerful* these features are. We can use the model to create a new row of *predictions* on the combination.
@@ -562,14 +567,14 @@ As you can see, our little model seems to be doing a pretty good job: most of th
 has a high probability of being Hamilton-written, and most of the Madison is on the left.
 
 ```{r}
-predictions = fedMatrix %>% 
-  mutate(number = title %>% str_extract("[0-9]+") %>% as.numeric) %>%
+predictions <- fedMatrix %>%
+  mutate(number = title %>% str_extract("[0-9]+") %>% as.numeric()) %>%
   mutate(.prediction = predict(model, newdata = .)) %>%
   select(author, number, .prediction)
 
 predictions %>%
-  ggplot() + 
-  geom_point(aes(y = .prediction, x=plogis(.prediction), color=author, pch=author), size=3) + 
+  ggplot() +
+  geom_point(aes(y = .prediction, x = plogis(.prediction), color = author, pch = author), size = 3) +
   labs()
 ```
 
@@ -581,17 +586,17 @@ The right way to handle this is to break into *test* and *training* sets.
 
 ```{r}
 set.seed(1)
-test = known %>% sample_frac(.25)
-train = known %>% anti_join(test, by = c("title"))
+test <- known %>% sample_frac(.25)
+train <- known %>% anti_join(test, by = c("title"))
 
-model = glm(author == "HAMILTON" ~ there + by, data = train, family = "binomial")
-predictions = test %>%
+model <- glm(author == "HAMILTON" ~ there + by, data = train, family = "binomial")
+predictions <- test %>%
   mutate(.prediction = predict(model, newdata = .)) %>%
   select(author, title, .prediction)
 
 predictions %>%
-  ggplot() + 
-  geom_point(aes(y = .prediction, x=plogis(.prediction), color=author, pch=author), size=3)
+  ggplot() +
+  geom_point(aes(y = .prediction, x = plogis(.prediction), color = author, pch = author), size = 3)
 ```
 
 Thinking about errors requires more than just blindly sampling, though.
@@ -601,28 +606,29 @@ We'll run a classification of whether a president is a "Democrat" or not, allowi
 the other various parties to blend together.
 
 ```{r}
-president_mat = allSOTUs %>% 
-  group_by(word) %>% 
-  filter(n() > 7500) %>% 
+president_mat <- allSOTUs %>%
+  group_by(word) %>%
+  filter(n() > 7500) %>%
   group_by(year, president, party) %>%
   count(word) %>%
-  mutate(share = n/sum(n)) %>%
+  mutate(share = n / sum(n)) %>%
   select(-n) %>%
   spread(word, share, fill = 0) %>%
-  ungroup
+  ungroup()
 set.seed(1)
-test = president_mat %>% sample_frac(.2)
-train = president_mat %>% anti_join(test, by = 'year')
+test <- president_mat %>% sample_frac(.2)
+train <- president_mat %>% anti_join(test, by = "year")
 
-model = glm(party == "Democratic" ~ . , data = train %>% select(-president, -year), family = "binomial")
+model <- glm(party == "Democratic" ~ ., data = train %>% select(-president, -year), family = "binomial")
 6
-test_fit = test %>% mutate(predicted = predict(model, newdata = .))
+test_fit <- test %>% mutate(predicted = predict(model, newdata = .))
 
 test_fit %>%
   mutate(prediction = ifelse(predicted > 0, "Democratic", "Republican")) %>%
   mutate(correct = prediction == party) %>%
-  count(correct) %>% mutate(
-    rate = n/sum(n)
+  count(correct) %>%
+  mutate(
+    rate = n / sum(n)
   )
 ```
 
@@ -634,22 +640,24 @@ data to become conmingled in a way, because we have multiple examples from each 
 
 ```{r}
 
-test_presidents = president_mat %>% distinct(president) %>% sample_frac(.25)
+test_presidents <- president_mat %>%
+  distinct(president) %>%
+  sample_frac(.25)
 
-test = president_mat %>% inner_join(test_presidents)
-train = president_mat %>% anti_join(test_presidents)
+test <- president_mat %>% inner_join(test_presidents)
+train <- president_mat %>% anti_join(test_presidents)
 
-model = glm(party == "Democratic" ~ . , data = train %>% select(-president, -year), family = "binomial")
+model <- glm(party == "Democratic" ~ ., data = train %>% select(-president, -year), family = "binomial")
 
-test_fit = test %>% mutate(predicted = predict(model, newdata = .))
+test_fit <- test %>% mutate(predicted = predict(model, newdata = .))
 
 test_fit %>%
   mutate(prediction = ifelse(predicted < 0, "Democratic", "Republican")) %>%
   mutate(correct = prediction == party) %>%
-  count(correct) %>% mutate(
-    rate = n/sum(n)
+  count(correct) %>%
+  mutate(
+    rate = n / sum(n)
   )
-
 ```
 
 Problems of authorship attribution in the digital humanities have developed a much more robust statistical literature
@@ -665,7 +673,6 @@ Avoiding overfitting is a conceptual problem as much as a statistical one. Let's
 party of a state of the Union address.
 
 ```{r}
-allSOTUs
 
 ```
 Consider predicting party.
@@ -683,13 +690,12 @@ Consider predicting party.
 
 ```{r problem2, run = FALSE}
 
-dataset = NULL # <- fill this in
+dataset <- NULL # <- fill this in
 
-search = function(word) {
+search <- function(word) {
 
   # At the end, return the text of the three closest documents as in the SOTU search above.
 }
-
 ```
 
 2a. (Highly skippable: Conceptually complicated, but practically quite easy). This takes you higher into the land of 
@@ -700,10 +706,9 @@ search using TF-IDF where the dataset (as a grouped tibble) is one of the parame
 
 ```{r}
 
-search_engine = function(grouped_document_frame) {
+search_engine <- function(grouped_document_frame) {
   # At the end, return a function like the 'search' above keyed to the particular frame.
 }
-
 ```
 
 3. (Complicated, multistep.)
@@ -715,24 +720,25 @@ Calculate the classifiers accuracy (the percentage of predictions that are corre
 Look at the highest-likelihood misclassifications in both directions to see why it might be getting it wrong.
 
 ```{r, run = FALSE}
-titles = read_csv("../data/summaries.csv.gz") %>%
+titles <- read_csv("../data/summaries.csv.gz") %>%
   mutate(.juvenile = str_detect("Juvenile literature"))
 
 # Turn titles into a term document matrix with just the class.
-tdMatrix = titles %>% select(.juvenile, .lccn = lccn, summary) %>%
+tdMatrix <- titles %>%
+  select(.juvenile, .lccn = lccn, summary) %>%
   unnest_tokens(word = summary)
-  #etc: fill it out from here using spread, filter, etc. Make sure to limit the 
-  # population of words before you run "spread."
+# etc: fill it out from here using spread, filter, etc. Make sure to limit the
+# population of words before you run "spread."
 
 
 # Split into test and training data using the lccns. This will keep you honest. (Is it an unfair split.)
-# The particular function here: `%%` tests if the number is divisible by nine. This means one in nine books 
+# The particular function here: `%%` tests if the number is divisible by nine. This means one in nine books
 # will be in the test set.
 
-train = tdMatrix %>% filter(lccn %% 9 != 0)
-test = tdMatrix %>% filter(lccn %% 9 == 0)
+train <- tdMatrix %>% filter(lccn %% 9 != 0)
+test <- tdMatrix %>% filter(lccn %% 9 == 0)
 
-model = glm(.juvenile ~ ., data = train %>% select(-.lccn))
+model <- glm(.juvenile ~ ., data = train %>% select(-.lccn))
 
 ## Finally, train the model.
 ```

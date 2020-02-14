@@ -207,14 +207,22 @@ The course package contains four things:
 3. Code the streamline approaches that we've already learned that aren't easily expressed in another packages.
 4. A list of 'dependencies' that will automatically install *other* packages you need.
 
-## Creating your first project
+## Exercise: Creating your first project
 
 Getting started is the hardest thing, because it requires understanding--to some degree--this entire software 'stack.' Here's what you should do once RStudio is running.
 
-1. Type `remotes::install_github("HumanitiesDataAnalysis/HumanitiesDataAnalysis")` into the R prompt inside RStudio.
+1. Type the following into the prompt to install the latest version of this package.
+
+```{r eval = FALSE}
+remotes::install_github("HumanitiesDataAnalysis/HumanitiesDataAnalysis", upgrade = FALSE)
+```
+
 2. Type `library(HumanitiesDataAnalysis)` to actually load the package.
+
 3. Create a new project for problem sets in a folder on your computer.
+
 4. Type `download_problem_sets()` to download the sets.
+
 5. Start editing the code in the first problem set and run it using the green arrow buttons.
 
 

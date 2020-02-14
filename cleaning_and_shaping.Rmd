@@ -221,3 +221,68 @@ crews <- crews %>% mutate(
 
 ```
 
+
+
+# Exercises: Cleaning and Tidying data
+
+1. Is the data you read in under shiptypes `tidy`?
+
+2. (Hard, skippable) In the crews dataset bundled with the package, I've added 'feet' and 'inches.'
+   Here's the code that I used to do it.
+   Two hard questions:
+   
+   * Can you describe what is going on in each line of this?
+   * Can you find any examples of heights that this *fails* to detect?
+      (One way would be using an 'is.na()' filter)
+   
+
+```{r}
+
+crews <- crews %>% mutate(
+  feet = Height %>%
+    str_replace(" ?ft.? ", "'") %>%
+    str_replace("[',] ?.*", "") %>% 
+    as.numeric(),
+  inches = Height %>% 
+    str_replace(" ?ft.? ", "'") %>%
+    str_replace("[0-9]'? ?(1?[0-9]).*", "\\1") %>% 
+    as.numeric()
+)
+
+```
+
+2. Using the `pivot_wider` functions from the `tidyr` package, create a new data.frame that has rows corresponding to ship types and columns corresponding to years. (That is, the exact inverse of the data.frame you saw before.)
+
+``` {r}
+library(tidyverse)
+library(HumanitiesDataAnalysis)
+
+crews %>%
+  count(Rig, ) %>%
+  pivot_wider(names_from = Rig, values_from = n)
+```
+
+3. There's another file in the `data` directory called CESTACityData.csv. It was graciously provided by the [Center for Spatial and Textual Analysis at Stanford](https://cesta.stanford.edu/). Read it in. We'll be working with this data set more next week.
+
+``` {r}
+CESTA
+```
+
+
+4. This data is clearly not tidy. (Why not?) Use `pivot_longer` to turn it into tidy data, and save it as a data.frame called "tidied". (Hint: the final frame will have a column called "year." You may have to use str_replace to remove Xs from the year name.)
+
+``` {r}
+
+```
+
+5. Use the `?` command or the help pane to read about the function `write_csv`. Save the result to disk: we'll be exploring it more next week.
+
+``` {r}
+
+```
+
+
+### Tidy data for network visualizations.
+
+If you are interested in network visualizations, you can use the `tidygraph` package.
+

@@ -1,20 +1,54 @@
 ---
-title: "Regex Problems"
-author: "Ben Schmidt"
-output: pdf_document
----
+title: Data_and_Formal_Languages.Rmd
+output: docx
+...
 
-## Regex Exercises
 
 ```{r, include = FALSE}
 library(tidyverse)
 library(HumanitiesDataAnalysis)
 knitr::opts_chunk$set(eval=FALSE)
 ```
+## Exercises: Data Types and Regular Expressions
+
+
+### Data Types
+
+Two functions you'll never use again in R are called `intToUtf8` and `utf8ToInt`. They convert *between* the numbers that represent Unicode points, and the actual characters.
+
+1. **Vectors** in R are the underlying elements of datasets. In the movie '2001,' the computer is called "HAL" with
+the hidden joke that each of those letters are one ahead of "IBM."
+
+Edit this code below to take the string "Ivnbojujft" and shift its letters by one.
+
+```{r, echo = FALSE}
+
+IBM = utf8ToInt("IBM")
+intToUtf8(IBM - 1)
+
+```
+
+2. Stop and think for a second: what is the term `- 1` doing above?
+
+```{r}
+
+
+```
+
+
+3. The numbers for I, B, and M are 73, 66, and 77 respectively. But the Unicode space is much larger. Use the
+intToUTf8 function to find out what character is represented by the 128,512th character in Unicode.
+
+```{r}
+
+```
+
+
+### Regular expression searches
+
 
 **Try** to think about these. Give it a shot. Some of them are hard--if you're simply banging your head against the wall, take a break, or simply don't finish.
 
-### Searches
 
 1. There is one word that ends with two 'u's. What is it?
 
@@ -107,3 +141,4 @@ that will make the output much easier to read.)
 10. Create a regex that reduces the bible to a concordance for the word "love" that shows 3 words before and 3 words after. (very hard)
 
 11. Edit that regex so that it includes the book/line/verse number as the beginning. (very hard)
+

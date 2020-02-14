@@ -1,31 +1,35 @@
 ---
-title: "Grouping, filtering, and counting"
-author: "Ben Schmidt"
-date: "2019-01-29"
-output: pdf_document
----
+title: AnalyzingData.Rmd
+output: docx
+...
 
-Week 3 Problem set.
+
+```{r, include = FALSE}
+library(tidyverse)
+library(HumanitiesDataAnalysis)
+knitr::opts_chunk$set(eval=FALSE)
+```
+## Exercises
+
 
 ## Crews dataset.
 
-1. Using summarize, find the minimum age in the set. (Remember, the function to find a minimum is `min`.)
+1. The code below finds the first date that appears in this collection. Edit it to find the minimum **age** in the set.
 
-```{r global_options, include=FALSE}
-library(knitr)
-opts_chunk$set(eval=FALSE, warning=FALSE, message=FALSE)
-```
 
 ``` {r Exercise 1a}
-library(tidyverse)
-data(crews)
+
+crews %>%
+  filter(!is.na(date)) %>%
+  summarize(min = min(date))
 
 ```
 
-2. Using `filter`: what is the name of that youngest person? When did he or she sail?
+2. Use `filter` to determine: what is the name of that youngest person? When did he or she sail?
 
 ``` {r Exercise 2a}
-?set_tidy_names
+
+
 ```
 
 

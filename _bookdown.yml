@@ -4,12 +4,23 @@ language:
     chapter_name: "Chapter "
 delete_merged_file: true
 new_session: yes
+before_chapter_script: ["dependencies.R"]
+view: https://github.com/HumanitiesDataAnalysis/text/blob/master/%s
 rmd_files:
   - "index.Rmd"
   - "Introduction.Rmd"
-  - "02-Working_in_R.Rmd"
-  - "01-Data_and_Formal_Languages.Rmd"
-  - "01-regex_problems.Rmd"
-  - "03-AnalyzingData.Rmd"
-  - "03-Analyzing_problems.Rmd"
-
+  - "Working_in_R.Rmd"
+  - "Data_and_Formal_Languages.Rmd"
+  - "AnalyzingData.Rmd"
+  - "Cleaning_and_Shaping.Rmd"
+#  - "Cleaning_and_Shaping_problems.Rmd"
+#  - "VisualizingData.Rmd"
+#  - "Merges_and_joins.Rmd"
+#  - "Texts.Rmd"
+#  - "Bag-of-words.Rmd"
+#  - "Vector_Spaces.Rmd"
+#  - "Classifying.Rmd"
+#  - "Clustering_and_topic_modeling.Rmd"
+#  - "Mapping.Rmd"
+#  - "Mapping_Texts.Rmd"
+#  - "Applications.Rmd"

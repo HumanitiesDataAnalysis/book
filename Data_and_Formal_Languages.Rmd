@@ -429,3 +429,136 @@ but it can be very helpful to have a more succinct version. Some of the most use
 (If you are working in non-English languages, there are unicode extensions that work off the special character `\p` (or `\P` to designate the inverse of a selection). `\p{L}` matches any unicode letter, for example. See [the unicode web site](http://www.unicode.org/reports/tr18/) for more on this.)
 
 
+## Exercises: Data Types and Regular Expressions
+
+
+### Data Types
+
+Two functions you'll never use again in R are called `intToUtf8` and `utf8ToInt`. They convert *between* the numbers that represent Unicode points, and the actual characters.
+
+1. **Vectors** in R are the underlying elements of datasets. In the movie '2001,' the computer is called "HAL" with
+the hidden joke that each of those letters are one ahead of "IBM."
+
+Edit this code below to take the string "Ivnbojujft" and shift its letters by one.
+
+```{r, echo = FALSE}
+
+IBM = utf8ToInt("IBM")
+intToUtf8(IBM - 1)
+
+```
+
+2. Stop and think for a second: what is the term `- 1` doing above?
+
+```{r}
+
+
+```
+
+
+3. The numbers for I, B, and M are 73, 66, and 77 respectively. But the Unicode space is much larger. Use the
+intToUTf8 function to find out what character is represented by the 128,512th character in Unicode.
+
+```{r}
+
+```
+
+
+### Regular expression searches
+
+
+**Try** to think about these. Give it a shot. Some of them are hard--if you're simply banging your head against the wall, take a break, or simply don't finish.
+
+
+1. There is one word that ends with two 'u's. What is it?
+
+```{r}
+dictionary_search("YOUR SEARCH HERE")
+```
+
+2. The word "picalilli" contains five consecutive "l" or "i" letters. What word contains 6 consecutive "i" or "ls"?
+
+```{r}
+dictionary_search("SEARCH")
+```
+
+3. What is the longest substring of your name for which a word contains all the matches, in order? For example, my name is "Ben Schmidt" and I can match the first five letters wtih the capitalized letters in the word `BirkENStoCk.` What is yours?
+
+```{r}
+
+
+```
+
+
+4. What dictionary words contain the same letter, three times in a row? [hard]
+
+```{r}
+dictionary_search("SEARCH")
+```
+
+5. Besides the word found in question 2, are there any other words in the
+dictionary that contain two identical letters 6 times in a row? 7
+times in a row? [harder]
+
+```{r}
+
+
+```
+
+### Replacements
+
+6. One way that online sites occasional deal with abusive posts is to 'disemvowel' them; that is, to remove all of the vowels from them. This requires a replacement regular expression.
+
+```{r}
+str_replace("", "PATTERN", "REPLACEMENT")
+```
+
+7. Sometimes documents have excessive spaces in them. (For instance,
+if you copy and paste from the Internet). Write a regex
+that reduces any string of spaces down to just one. **For example,** this text:
+
+```
+	Good day, everyone.
+	1     4      6
+	
+	3   4       10
+	Good night, ladies
+```
+
+Would be reduced to:
+
+```
+Good day, everyone. 1 4 6 3 4 10 Good night, ladies 
+```
+	
+```{r space_replacement}
+
+str_replace("This   is    too
+            many spaces
+            
+            Isn't it?", "PATTERN", "REPLACEMENT")
+
+```
+
+8. Write a regex that changes the spelling of all words in a document
+so that they conform to the rule "I before e, except after c." [hard]
+
+```{r}
+
+```
+
+*Concordances*
+
+An online version of the bible is at
+benschmidt.org/bible. It allows you to filter and replace at
+once on the bible. This may take some time to run, so it initially
+will only show values for the book of Matthew.
+
+9. Pick a biblical figure--Jesus, for instance. Assume that the Bible is in the past tense, and that all verbs end with 'ed'. What sort of 
+stuff does your figure do the most? What are his most common verbs? (You don't have to use the replacements, but there's a way to copy and paste the top line and use a single `\1` grouping
+that will make the output much easier to read.)
+
+10. Create a regex that reduces the bible to a concordance for the word "love" that shows 3 words before and 3 words after. (very hard)
+
+11. Edit that regex so that it includes the book/line/verse number as the beginning. (very hard)
+
